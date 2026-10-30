@@ -5,7 +5,7 @@
     {
       "task_key": "generate_data",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/generate_synthetic_data",
+        "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/resources/generate_synthetic_data",
         "source": "WORKSPACE",
         "base_parameters": {
           "cruise_type": "{{job.parameters.cruise_type}}"

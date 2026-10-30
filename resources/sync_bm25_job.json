@@ -1,0 +1,54 @@
+{
+  "name": "survey_demo_sync_bm25_refresh",
+  "description": "Chained Lakeflow job: (1) MERGE any newly enriched survey rows (with amenity_embedding) into the UC source river_survey_amenity_search; (2) run the Lakebase synced-table pipeline so river_amenity_search_synced is updated; (3) re-materialize the BM25 companion river_amenity_bm25 and refresh its lakebase_bm25 index.",
+  "tasks": [
+    {
+      "task_key": "add_new_rows",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/resources/add_new_amenity_search_rows",
+        "source": "WORKSPACE"
+      },
+      "environment_key": "serverless_env"
+    },
+    {
+      "task_key": "sync_survey_amenity",
+      "depends_on": [
+        {
+          "task_key": "add_new_rows"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "pipeline_task": {
+        "pipeline_id": "283dd775-914c-4b12-8df5-4672c4a01c9e",
+        "full_refresh": false
+      }
+    },
+    {
+      "task_key": "refresh_bm25",
+      "depends_on": [
+        {
+          "task_key": "sync_survey_amenity"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/resources/refresh_bm25_companion",
+        "source": "WORKSPACE"
+      },
+      "environment_key": "serverless_env"
+    }
+  ],
+  "environments": [
+    {
+      "environment_key": "serverless_env",
+      "spec": {
+        "client": "2"
+      }
+    }
+  ],
+  "max_concurrent_runs": 1,
+  "timeout_seconds": 3600,
+  "queue": {
+    "enabled": true
+  }
+}

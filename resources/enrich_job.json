@@ -5,11 +5,11 @@
     {
       "task_key": "enrich",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/enrich_survey_incremental",
+        "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/resources/enrich_survey_incremental",
         "source": "WORKSPACE",
         "base_parameters": {
-          "cruise_type":    "{{job.parameters.cruise_type}}",
-          "max_new_rows":   "{{job.parameters.max_new_rows}}"
+          "cruise_type": "{{job.parameters.cruise_type}}",
+          "max_new_rows": "{{job.parameters.max_new_rows}}"
         }
       },
       "environment_key": "serverless_env"
@@ -24,10 +24,18 @@
     }
   ],
   "parameters": [
-    {"name": "cruise_type",  "default": "River"},
-    {"name": "max_new_rows", "default": "1000"}
+    {
+      "name": "cruise_type",
+      "default": "River"
+    },
+    {
+      "name": "max_new_rows",
+      "default": "1000"
+    }
   ],
   "max_concurrent_runs": 1,
   "timeout_seconds": 7200,
-  "queue": {"enabled": true}
+  "queue": {
+    "enabled": true
+  }
 }

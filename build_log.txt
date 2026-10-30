@@ -73,3 +73,13 @@ Prompt:
     gte-large-en model to embed the amenity comment
 
 ================================================================================
+
+Session ID:       f99ed4df-b571-4cfc-80c7-77a9a501d434
+Session start:    2026-10-30T20:05:53Z  (2026-10-30 15:05:53 CDT)
+Current time:     2026-10-30T20:52:14Z  (2026-10-30 15:52:14 CDT)
+
+Note:             Created Lakebase Instance, Sync Table + Companion TSVector
+                  table + Sync Job. Also refactored the files into clear
+                  subdirectories
+
+================================================================================

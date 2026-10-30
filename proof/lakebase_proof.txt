@@ -1,0 +1,93 @@
+================================================================================
+LAKEBASE_PROOF.TXT — Hybrid search smoke test
+================================================================================
+Timestamp (UTC):       2026-10-30T20:42:20Z
+Project:               survey-demo-lakebase
+Branch:                production
+Endpoint:              primary (ep-calm-moon-d8gqqayh.database.us-east-2.cloud.databricks.com)
+Database:              databricks_postgres
+Vector table:          survey_demo.river_amenity_search_synced  (synced from Delta)
+Vector column:         amenity_embedding VECTOR(1024)
+Vector index:          river_amenity_embedding_ann  (lakebase_ann, vector_cosine_ops)
+BM25 table:            survey_demo.river_amenity_bm25           (companion, non-synced)
+BM25 column:           amenity_tsv TSVECTOR  (to_tsvector('english', amenities_comment))
+BM25 index:            river_amenity_bm25_idx  (lakebase_bm25)
+Fusion method:         Reciprocal Rank Fusion (RRF), k = 60, top-40 per source
+
+--------------------------------------------------------------------------------
+QUERY STRINGS
+--------------------------------------------------------------------------------
+Vector query string:   "The Aquavit Terrace was broken and unusable"
+    -> embedded via ai_query('databricks-gte-large-en', ..., returnType=>'ARRAY<FLOAT>')
+    -> passed to Postgres as a VECTOR(1024)
+Keyword query string:  "Aquavit Terrace broken unusable"
+    -> to_tsvector('english', ...)
+
+--------------------------------------------------------------------------------
+HYBRID RRF QUERY (parameterized form)
+--------------------------------------------------------------------------------
+-- $1 = embedding::vector(1024), $2 = plain-text keyword query
+WITH vector_ranked AS (
+    SELECT survey_id, RANK() OVER (ORDER BY dist) AS rank
+    FROM (
+        SELECT survey_id, amenity_embedding <=> $1::vector AS dist
+        FROM   survey_demo.river_amenity_search_synced
+        ORDER BY dist
+        LIMIT 40
+    ) v
+),
+keyword_ranked AS (
+    SELECT survey_id, RANK() OVER (ORDER BY score) AS rank
+    FROM (
+        SELECT survey_id,
+               amenity_tsv <@> to_bm25query(
+                   to_tsvector('english', $2),
+                   'survey_demo.river_amenity_bm25_idx'::regclass
+               ) AS score
+        FROM   survey_demo.river_amenity_bm25
+        ORDER BY score
+        LIMIT 40
+    ) k
+)
+SELECT s.survey_id,
+       s.amenity_sentiment,
+       LEFT(s.amenities_comment, 120) AS amenities_comment,
+       COALESCE(1.0 / (60 + v.rank), 0) + COALESCE(1.0 / (60 + k.rank), 0) AS rrf_score
+FROM   survey_demo.river_amenity_search_synced s
+LEFT JOIN vector_ranked  v USING (survey_id)
+LEFT JOIN keyword_ranked k USING (survey_id)
+WHERE  v.survey_id IS NOT NULL OR k.survey_id IS NOT NULL
+ORDER BY rrf_score DESC, s.survey_id
+LIMIT 10;
+
+--------------------------------------------------------------------------------
+RESULTS (top 10, ordered by RRF score desc)
+--------------------------------------------------------------------------------
+columns: survey_id | amenity_sentiment | amenities_comment (first 120 chars) | rrf_score
+
+survey_id|amenity_sentiment|amenities_comment|rrf_score
+231665|negative|Aquavit Terrace service was poor and the retractable glass doors were broken; could not use the space in bad weather.|0.032787
+231676|negative|Aquavit Terrace service was poor and the retractable glass doors were broken; could not use the space in bad weather.|0.032787
+231643|negative|The Aquavit Terrace had leaking windows and furniture was removed - a mess.|0.030550
+231652|negative|The Aquavit Terrace had leaking windows and furniture was removed - a mess.|0.030550
+231671|negative|The Aquavit Terrace was closed for most of our trip - a huge letdown.|0.030159
+231660|negative|The Aquavit Terrace had leaking windows and furniture was removed - a mess.|0.030118
+231666|negative|Half the Aquavit Terrace was roped off for repairs - it ruined the ambiance we booked for.|0.029958
+231634|negative|Half the Aquavit Terrace was roped off for repairs - it ruined the ambiance we booked for.|0.029710
+231637|negative|Half the Aquavit Terrace was roped off for repairs - it ruined the ambiance we booked for.|0.029710
+231639|negative|Half the Aquavit Terrace was roped off for repairs - it ruined the ambiance we booked for.|0.029710
+(10 rows)
+
+--------------------------------------------------------------------------------
+INTERPRETATION
+--------------------------------------------------------------------------------
+All top-10 hits are the planted bad-sailing amenity comments (amenity_sentiment =
+negative, references to the Aquavit Terrace being broken / closed / unusable).
+Both the semantic vector search and the BM25 keyword search independently
+retrieve the planted problem comments, and RRF stacks them at the top of the
+unified ranking. The injected quality signal from the data generator survives
+end-to-end through enrichment, sync, vector embedding, and BM25 indexing.
+
+================================================================================
+END OF FILE
+================================================================================
