@@ -1,0 +1,33 @@
+{
+  "name": "survey_demo_enrich_survey_incremental",
+  "description": "Incremental enrichment of the survey table using AI Functions: ai_classify (stateroom + amenity sentiment), ai_extract (amenity names), and ai_query against databricks-gte-large-en for amenity-comment embeddings. Parameterized by cruise_type (River|Ocean) and max_new_rows (0 = unlimited).",
+  "tasks": [
+    {
+      "task_key": "enrich",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/enrich_survey_incremental",
+        "source": "WORKSPACE",
+        "base_parameters": {
+          "cruise_type":    "{{job.parameters.cruise_type}}",
+          "max_new_rows":   "{{job.parameters.max_new_rows}}"
+        }
+      },
+      "environment_key": "serverless_env"
+    }
+  ],
+  "environments": [
+    {
+      "environment_key": "serverless_env",
+      "spec": {
+        "client": "2"
+      }
+    }
+  ],
+  "parameters": [
+    {"name": "cruise_type",  "default": "River"},
+    {"name": "max_new_rows", "default": "1000"}
+  ],
+  "max_concurrent_runs": 1,
+  "timeout_seconds": 7200,
+  "queue": {"enabled": true}
+}

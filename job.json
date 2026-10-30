@@ -1,0 +1,36 @@
+{
+  "name": "survey_demo_generate_synthetic_data",
+  "description": "Initial-load synthetic data generator for the cruise survey demo. Parameterized by cruise_type (River|Ocean) to pick the Viking or Royal Caribbean dataset. Writes 4 Delta tables under serverless_stable_yrljz5_catalog.survey_demo.",
+  "tasks": [
+    {
+      "task_key": "generate_data",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/generate_synthetic_data",
+        "source": "WORKSPACE",
+        "base_parameters": {
+          "cruise_type": "{{job.parameters.cruise_type}}"
+        }
+      },
+      "environment_key": "serverless_env"
+    }
+  ],
+  "environments": [
+    {
+      "environment_key": "serverless_env",
+      "spec": {
+        "client": "2"
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "cruise_type",
+      "default": "River"
+    }
+  ],
+  "max_concurrent_runs": 1,
+  "timeout_seconds": 3600,
+  "queue": {
+    "enabled": true
+  }
+}

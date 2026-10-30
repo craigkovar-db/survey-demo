@@ -1,0 +1,510 @@
+================================================================================
+DATA_NOTES.TXT — RESEARCH NOTES FOR DATA GENERATION
+Topic: Cruise line fleets & itineraries (Viking River; Royal Caribbean Int'l)
+Compiled: 2026-10-30
+Scope: Used downstream as source material for synthetic data generation.
+Sources: Viking Cruises IR releases, vikingrivercruises.com, vikingcruises.com,
+         Cruise Critic / Harr Travel Longship coverage; Royal Caribbean press
+         center, RCCL 2026 Fleet Guide PDF, "What's Included Onboard Icon of
+         the Seas" infographic, Royal Caribbean icon-class page, Wikipedia,
+         RCL Investor key statistics, cruisewake, cruisefever, cruisesnooze
+         (public pages, Oct 2026).
+Notes:   Ship rosters and capacities change as new builds enter service and
+         retiring vessels exit. Published capacity figures also differ slightly
+         between Royal Caribbean's investor relations table, press-kit fact
+         sheets, and third-party aggregators (ships get "amplified" with cabin
+         additions, raising berths). Treat counts as "approximate, late-2026"
+         and prefer per-ship numbers from the primary tables cited below.
+================================================================================
+
+
+================================================================================
+SECTION 1 — VIKING (River Cruises)
+================================================================================
+
+1.1 FLEET SIZE
+--------------
+Viking operates the largest river-cruise fleet in the world. Approximate
+counts as of late 2026:
+
+    * Total river vessels in service:  ~80 ships
+    * Longships (the signature Rhine/Main/Danube/Seine class, 190 guests):
+                                       ~70 of the 80
+    * Non-Longship river vessels (Douro, Nile, Mekong, Mississippi, etc.):
+                                       ~10
+
+    Fleet is expanding: Viking announced an order for 10 additional
+    Longships for delivery across 2025-2026 (five + five), plus continued
+    Nile, Douro, and Mekong additions through 2027-2028. By end of 2027
+    the river fleet is expected to be ~90 vessels.
+
+1.2 SHIP NAMES BY WATERWAY / CLASS
+----------------------------------
+Viking's river vessels are organized around the river they sail. The core
+Longship design (3 decks, ~135 m long, 95 cabins, 190 guests) is shared
+across the Rhine, Main, Danube, Moselle, Seine, Rhône, and Elbe. Smaller
+purpose-built classes serve shallower rivers (Douro, Nile, Mekong).
+
+A) LONGSHIPS — Rhine / Main / Danube / Moselle / Rhône / Elbe (Europe)
+   Ship names are drawn from Norse mythology:
+
+     Viking Aegir, Viking Alruna, Viking Alsvin, Viking Annar, Viking Atla,
+     Viking Baldur, Viking Bestla, Viking Beyla, Viking Bragi, Viking Buri,
+     Viking Dagur, Viking Delling, Viking Egdir, Viking Egil, Viking Einar,
+     Viking Eir, Viking Eistla, Viking Eldir, Viking Embla, Viking Forseti,
+     Viking Freya, Viking Fulla, Viking Gefjon, Viking Gersemi,
+     Viking Gullveig, Viking Gyda, Viking Gymir, Viking Haki, Viking Halogi,
+     Viking Heimdal, Viking Herja, Viking Hermod, Viking Hervor, Viking Hild,
+     Viking Hlin, Viking Hnoss, Viking Honir, Viking Idi, Viking Idun,
+     Viking Ingvi, Viking Jarl, Viking Kadlin, Viking Kara, Viking Kvasir,
+     Viking Laga, Viking Lif, Viking Lofn, Viking Magni, Viking Mani,
+     Viking Mimir, Viking Modi, Viking Njord, Viking Odin, Viking Ran,
+     Viking Rinda, Viking Rolf, Viking Rota, Viking Saga, Viking Sigrun,
+     Viking Sigyn, Viking Sjofn, Viking Skadi, Viking Skirnir, Viking Tialfi,
+     Viking Tir, Viking Tor, Viking Ullur, Viking Vali, Viking Var,
+     Viking Ve, Viking Vidar, Viking Vilhjalm, Viking Vili
+
+   New builds entering 2026-2027 (also Longships):
+     Viking Fjolvar, Viking Sol
+
+B) LONGSHIPS — Seine (France)
+   Same Longship class, French-river variant:
+
+     Viking Fjorgyn, Viking Kari, Viking Nerthus, Viking Radgrid,
+     Viking Skaga
+
+C) DOURO CLASS — Douro River (Portugal)
+   Smaller 106-guest vessels purpose-built for the Douro's locks:
+
+     Viking Helgrim, Viking Hemming, Viking Osfrid, Viking Torgil,
+     Viking Sol  (note: Viking uses "Sol" for both a Longship newbuild
+                  and a Douro vessel; context disambiguates)
+
+D) NILE-CLASS — Nile River (Egypt)
+   82-guest, 3-deck Egyptian-themed vessels:
+
+     Viking Amun, Viking Antares (MS Antares, chartered), Viking Anubis,
+     Viking Aton, Viking Geb, Viking Hathor, Viking Osiris, Viking Ptah,
+     Viking Ra, Viking Sekhmet, Viking Sobek, Viking Thoth
+
+E) MEKONG RIVER (Vietnam / Cambodia)
+     Viking Saigon, Viking Tonle
+
+F) MISSISSIPPI RIVER (USA)
+   One 5-deck, 386-guest riverboat:
+     Viking Mississippi
+
+G) FUTURE / UNDER CONSTRUCTION (ordered, not yet in service)
+     Viking Brahmaputra  (India, planned start 2027)
+
+1.3 NAMED RIVER-CRUISE ITINERARIES OFFERED
+------------------------------------------
+Viking markets its river journeys as named itineraries (not just by
+destination). The core catalog:
+
+   Europe — Rhine / Main / Danube / Moselle:
+     * Rhine Getaway                     (8 days,  Amsterdam <-> Basel)
+     * Grand European Tour               (15 days, Amsterdam <-> Budapest)
+     * Romantic Danube                   (8 days,  Regensburg <-> Budapest)
+     * Danube Waltz                      (8 days,  Budapest <-> Passau)
+     * Danube Explorer                   (8 days,  Budapest round-trip)
+     * Passage to Eastern Europe         (11 days, Budapest <-> Bucharest)
+     * European Sojourn                  (23 days, Amsterdam -> Bucharest)
+     * Rhine, Main & Danube Odyssey      (18 days, Basel -> Budapest)
+     * Cities of Light                   (12 days, Prague/Paris via Moselle)
+     * Christmas on the Rhine            (8 days,  seasonal)
+     * Christmas on the Rhine & Moselle  (12 days, seasonal)
+     * Danube Christmas Delights         (8 days,  seasonal)
+
+   Europe — Seine / Rhône / Garonne (France):
+     * Paris & the Heart of Normandy     (8 days,  Paris round-trip, Seine)
+     * France's Finest                   (15 days, Paris -> Avignon)
+     * Paris to the Swiss Alps           (12 days, Paris -> Zurich)
+     * Lyon & Provence                   (8 days,  Lyon <-> Avignon, Rhône)
+     * Chateaux, Rivers & Wine           (8 days,  Bordeaux round-trip)
+
+   Europe — Elbe / Dutch waterways:
+     * Tulips & Windmills                (8 days,  Amsterdam round-trip)
+     * Elegant Elbe                      (10 days, Berlin <-> Prague)
+
+   Iberia:
+     * Portugal's River of Gold          (10 days, Lisbon <-> Porto, Douro)
+     * Portugal's River of Gold & Spain  (11 days, Douro + Salamanca)
+
+   Egypt:
+     * Pharaohs & Pyramids               (12 days, Cairo round-trip, Nile)
+
+   Southeast Asia:
+     * Magnificent Mekong                (15 days, Ho Chi Minh City <-> Hanoi)
+
+   North America:
+     * America's Great River             (Mississippi; multiple segments:
+                                          New Orleans <-> St. Paul, etc.)
+
+   Future / recently announced:
+     * India's Brahmaputra itinerary     (planned 2027)
+
+1.4 ATTRACTIONS & AMENITIES AVAILABLE ON A VIKING LONGSHIP
+-----------------------------------------------------------
+A Viking Longship is a 3-deck, 95-cabin, 190-guest vessel built to a shared
+Scandinavian-design template (interior architects known for luxury hotels;
+accents of slate, teak, and limestone; Nordic textiles and original Nordic
+art). Longships are intentionally understated — "the destination is the
+attraction." There are no top-deck thrill rides, no casino, no nightclub,
+no kids' club. The on-board experience centers on scenic sailing, enrichment,
+and regionally-inflected dining. Features available on virtually every
+Longship:
+
+   PUBLIC SPACES & VIEWING:
+     * Atrium — two-story sky-lit lobby with floor-to-ceiling windows and a
+       sweeping staircase; functions as the ship's hotel-style front desk
+     * Viking Lounge — the ship's "living room"; bar, piano, dance floor,
+       floor-to-ceiling windows; hosts daily port briefings, lock talks,
+       cooking demonstrations, happy hour, and evening live music
+     * Aquavit Lounge / Sun Room — bright casual lounge forward of the
+       Viking Lounge; retractable floor-to-ceiling glass doors open onto
+       the Aquavit Terrace
+     * Aquavit Terrace — Viking's signature indoor/outdoor space at the bow,
+       with al fresco seating, grills, and two rocking chairs at the very
+       front facing the river
+     * Sun Deck — runs the length of the ship with 360-degree views,
+       shaded sitting area, loungers, umbrellas; railings/furnishings fold
+       down hydraulically to clear low European bridges
+     * Library corner — curated by London bookshop Heywood Hill; passenger
+       book-exchange and board games nearby
+     * Onboard Boutique — small shop for Viking logo wear and souvenirs
+
+   DINING (all included in fare; no reservations; open seating):
+     * The Restaurant — main dining room with floor-to-ceiling windows;
+       breakfast and lunch buffet (with cooked-to-order menu items), plated
+       four-course dinner; beer and wine included with lunch and dinner
+     * Aquavit Terrace — casual indoor/outdoor alternative; light buffet
+       breakfast and lunch, bistro-style dinner; smaller tables
+     * 24-hour coffee nooks on both sides of the ship — espresso drinks,
+       teas, cookies
+     * Welcome Champagne, nightly cocktail hour, and regional wine tastings
+     * Room service is limited (breakfast only; Explorer Suite guests only)
+
+   OUTDOOR / RECREATION ON THE SUN DECK:
+     * Walking track that loops the deck
+     * Chef's organic herb garden (chefs harvest daily for on-board meals)
+     * Putting green and shuffleboard
+     * Solar panels running down the center of the deck
+
+   ENRICHMENT & ENTERTAINMENT:
+     * Daily port talks and destination lectures in the Viking Lounge
+     * Local performers brought aboard in port (classical music,
+       traditional folk performances, regional food/wine tastings)
+     * Culinary demonstrations and cooking classes (e.g. strudel-making)
+     * Scenic-sailing commentary during river locks and gorges
+     * In-stateroom infotainment: 40"-42" flat-panel Sony TVs with
+       movies-on-demand, CNBC, CNN, National Geographic, destination content
+
+   STATEROOMS (all outside, all river-view):
+     * Standard (water-level, smaller windows)
+     * French Balcony (~135 sq ft, floor-to-ceiling door, no step-out)
+     * Veranda stateroom (~205 sq ft, full step-out balcony)
+     * Veranda Suite (~275 sq ft, separate sitting area, full veranda + French
+       balcony, two flat-panel TVs)
+     * Explorer Suite (~445 sq ft, wrap-around veranda with 270-degree views,
+       two TVs; perks include priority embarkation, private transfers, in-
+       suite breakfast, Silver Spirits beverage package, free laundry,
+       welcome Champagne, daily minibar restock)
+     * All staterooms: hotel-style bed with European linens, heated bathroom
+       floors, anti-fog mirrors, premium bath products, bathrobe & slippers
+       on request, telephone, safe, refrigerator, hairdryer, individual
+       climate control, 220V and 110V (US-style) outlets, USB ports
+
+   SERVICES & SUSTAINABILITY:
+     * Complimentary ship-wide Wi-Fi
+     * Laundry service (self-serve on some vessels; paid attended service
+       on others)
+     * Guest Services / concierge desk acts as hotel front desk
+     * Cruise Manager handles excursions and shore programming
+     * Elevator between Middle and Upper Decks only (NOT serving Lower Deck)
+     * Eco features: energy-efficient hybrid diesel-electric engines (less
+       vibration, lower emissions), solar panels on Sun Deck, organic herb
+       garden, LED lighting throughout
+
+   NOT PRESENT ON A VIKING LONGSHIP (common questions):
+     * No casino, no nightclub, no theater, no production shows
+     * No kids' or teen club (Viking is adults-only, 18+)
+     * No pool or hot tubs (space does not permit on a river vessel)
+     * No specialty / up-charge restaurants (all dining is included)
+     * No pre-paid gratuity programs; tipping is at guest discretion
+
+
+================================================================================
+SECTION 2 — ROYAL CARIBBEAN INTERNATIONAL
+================================================================================
+
+Scope note: This section covers ONLY Royal Caribbean International (the
+"Royal Caribbean" brand). It intentionally EXCLUDES the sister brands
+owned by the parent company Royal Caribbean Group — specifically
+Celebrity Cruises and Silversea.
+
+2.1 FLEET SIZE
+--------------
+As of late 2026:
+
+    * Active ships in service:     31
+      (30 before Legend of the Seas joined in 2026; 31 with Legend)
+    * Future / under construction: 1 confirmed (Hero of the Seas,
+                                   Icon class, floated out Sep 2026,
+                                   entering service August 2027)
+
+2.2 SHIP NAMES, CLASSES, AND PASSENGER CAPACITY
+-----------------------------------------------
+Every Royal Caribbean International ship uses the suffix "of the Seas".
+Fleet is organized into 7 active classes (newest -> oldest). Capacities
+below are DOUBLE OCCUPANCY (two guests per cabin) — Royal Caribbean also
+publishes a MAXIMUM capacity (3rd/4th-berth cabins full), which is
+roughly 20-25% higher. Where sources disagree, the figure matches Royal
+Caribbean's investor-relations fact sheet first, then the current fleet
+guide.
+
+A) ICON CLASS  (3 in service, LNG-powered; largest cruise ships ever built)
+   Ship                      Year    Guests (double occ.)   Gross Tons
+   ---------------------------------------------------------------------
+   Icon of the Seas          2024    5,610                  248,663
+   Star of the Seas          2025    5,610                  248,663
+   Legend of the Seas        2026    5,610                  248,663
+   Hero of the Seas          2027*   5,654                  250,800   (*future)
+
+B) OASIS CLASS  (6 in service; many have been "Royal Amplified")
+   Ship                      Year    Guests (double occ.)   Gross Tons
+   ---------------------------------------------------------------------
+   Oasis of the Seas         2009    5,602                  226,838
+   Allure of the Seas        2010    5,718                  225,282
+   Harmony of the Seas       2016    5,479                  226,963
+   Symphony of the Seas      2018    5,518                  228,081
+   Wonder of the Seas        2022    5,734                  235,600
+   Utopia of the Seas        2024    5,668                  236,473
+
+C) QUANTUM CLASS  (5 in service; incl. Quantum Ultra variants)
+   Ship                      Year    Guests (double occ.)   Gross Tons
+   ---------------------------------------------------------------------
+   Quantum of the Seas       2014    4,180                  168,666
+   Anthem of the Seas        2015    4,180                  168,666
+   Ovation of the Seas       2016    4,180                  168,666
+   Spectrum of the Seas      2019    4,246                  169,379   (Ultra)
+   Odyssey of the Seas       2021    4,198                  167,704   (Ultra)
+
+D) FREEDOM CLASS  (3 in service)
+   Ship                      Year    Guests (double occ.)   Gross Tons
+   ---------------------------------------------------------------------
+   Freedom of the Seas       2006    3,926                  156,271
+   Liberty of the Seas       2007    3,798                  154,407
+   Independence of the Seas  2008    3,858                  154,407
+
+E) VOYAGER CLASS  (5 in service)
+   Ship                      Year    Guests (double occ.)   Gross Tons
+   ---------------------------------------------------------------------
+   Voyager of the Seas       1999    3,602                  137,276
+   Explorer of the Seas      2000    3,286                  137,308
+   Adventure of the Seas     2001    3,114                  137,276
+   Navigator of the Seas     2002    3,388                  139,999
+   Mariner of the Seas       2003    3,344                  139,863
+
+F) RADIANCE CLASS  (4 in service)
+   Ship                      Year    Guests (double occ.)   Gross Tons
+   ---------------------------------------------------------------------
+   Radiance of the Seas      2001    2,143                   90,090
+   Brilliance of the Seas    2002    2,142                   90,090
+   Serenade of the Seas      2003    2,143                   90,090
+   Jewel of the Seas         2004    2,191                   90,090
+
+G) VISION CLASS  (4 in service; oldest active class)
+   Ship                      Year    Guests (double occ.)   Gross Tons
+   ---------------------------------------------------------------------
+   Grandeur of the Seas      1996    1,992                   73,817
+   Enchantment of the Seas   1997    2,252                   82,910
+   Rhapsody of the Seas      1997    2,040                   78,878
+   Vision of the Seas        1998    2,050                   78,340
+
+Class totals: 3 + 6 + 5 + 3 + 5 + 4 + 4 = 30 active, + Legend (2026) = 31.
+Approximate total fleet berths (double occupancy): ~117,000 guests.
+
+2.3 CRUISES / ITINERARIES OFFERED
+---------------------------------
+Unlike Viking, Royal Caribbean does not generally market named itineraries;
+cruises are branded primarily by region, length, and homeport. The
+destination-level cruise programs offered in the 2026 deployment plan:
+
+   The Caribbean & Atlantic:
+     * Eastern Caribbean cruises         (3-, 4-, 5-, 6-, 7-, 8-night)
+     * Western Caribbean cruises         (3-, 4-, 5-, 6-, 7-, 8-night)
+     * Southern Caribbean cruises        (7-night, from San Juan)
+     * Bahamas cruises                   (3-, 4-, 5-night)
+     * "Perfect Day at CocoCay" sailings (private-island calls; 18 ships
+                                          scheduled to visit in 2026)
+     * Bermuda cruises                   (from Bayonne/NJ)
+     * Panama Canal / Partial Transits
+     * Transatlantic repositioning sailings
+
+   North America:
+     * Alaska cruises       (Seattle, Vancouver, Seward; 7-night + one-way)
+     * Canada & New England cruises
+     * Mexican Riviera / Baja Mexico     (3- to 8-night from Los Angeles)
+     * Pacific Coastal
+
+   Europe:
+     * Western Mediterranean cruises     (Barcelona, Rome, Civitavecchia)
+     * Eastern Mediterranean / Greek Isles cruises
+     * Adriatic & Croatia cruises        (from Ravenna)
+     * Northern Europe / Scandinavia & Russia cruises
+     * Norwegian Fjords cruises          (from Southampton)
+     * British Isles cruises
+
+   Asia-Pacific:
+     * Australia & New Zealand cruises   (Sydney, Brisbane; 3- to 12-night)
+     * Southeast Asia cruises            (Singapore -> Malaysia, Thailand)
+     * Japan & North Asia cruises        (Hong Kong, Shanghai)
+
+   South America:
+     * South America cruises             (seasonal; incl. Chile/Argentina
+                                          repositioning)
+
+   Specialty / branded on-board programs tied to all of the above:
+     * "Perfect Day at CocoCay" (private destination, Bahamas)
+     * CocoCay + Caribbean combo sailings
+     * Short "Weekend Getaway" cruises   (3-/4-night from Florida)
+     * World Cruise segments / grand voyages
+
+2.4 ATTRACTIONS AVAILABLE ON ICON-CLASS SHIPS
+---------------------------------------------
+Icon-class ships (Icon of the Seas, Star of the Seas, Legend of the Seas,
+Hero of the Seas) are the largest cruise ships ever built. Each is
+organized into 8 themed "neighborhoods" that bundle attractions, dining,
+and entertainment. The feature set below is the shared Icon-class
+template; small variations exist ship to ship (e.g. different supper-club
+themes).
+
+A) EIGHT NEIGHBORHOODS
+     1. Royal Promenade          — two-deck indoor shopping/dining boulevard;
+                                   home of "The Pearl" (iconic glass sphere)
+     2. AquaDome                 — glass-and-steel dome at the bow of Deck 15
+                                   with 220-degree ocean views; houses the
+                                   AquaTheater and the AquaDome Market
+     3. Central Park             — open-air greenery neighborhood with live
+                                   trees and plants; "jazz & brunch" vibe
+     4. Thrill Island            — top-deck adrenaline zone (decks 16-17)
+     5. Chill Island             — three-deck main pool area aft of AquaDome
+     6. Surfside                 — family-first neighborhood (Deck 7 aft)
+     7. The Hideaway             — adults-only beach-club zone, aft of Deck 15
+     8. Suite Neighborhood (The Grove) — multi-deck suite enclave with
+                                   private pool, sun deck, and restaurants
+
+B) THRILLS / ACTIVITIES
+     * Category 6 Waterpark      — largest waterpark at sea; 6 record-
+                                   breaking slides including a free-fall and
+                                   the tallest drop slide at sea
+     * Crown's Edge              — 154-ft (17-story) part-skywalk, part-
+                                   ropes-course, part-thrill-ride
+     * FlowRider                 — stand-up/bodyboard surf simulator
+     * Adrenaline Peak           — rock-climbing wall
+     * Lost Dunes                — mini-golf course
+     * Sports Court              — basketball, volleyball, pickleball
+     * Zip Line                  — top-deck zipline
+     * Running Track             — open-air track with ocean views
+     * Fitness Center            — machines, free weights
+     * Vitality Spa + Thermal Suites + YSPA Teen Spa
+     * Casino Royale             — full-service casino on Deck 4
+     * Royal Escape Room         — paid, bookable puzzle experience
+
+C) POOLS & WHIRLPOOLS  (7 pools + 9 whirlpools in total)
+     * Royal Bay Pool            — "largest pool at sea"
+     * Swim & Tonic              — largest swim-up bar at sea (adults-only)
+     * The Cove Pool             — oceanfront infinity pool (adults-only)
+     * The Hideaway Pool         — first suspended infinity pool at sea
+     * Water's Edge              — family-friendly pool
+     * Cloud 17                  — sky-high pool deck
+     * The Grove Suite Pool      — multi-deck suite-only pool
+     * Nine whirlpools scattered across the pool neighborhoods
+
+D) KIDS / TEEN / FAMILY SPACES
+     * Adventure Ocean           — kids' club, ages 3-12 (award-winning)
+     * Social 020                — teen hangout
+     * Royal Babies & Tots Nursery
+     * Splashaway Bay            — kid-friendly aqua park
+     * Baby Bay                  — baby splash zone
+     * Playscape                 — climbable play area for kids
+     * Carousel                  — Surfside family ride
+     * The Lemon Post            — kid-and-adult mocktail/cocktail bar in
+                                   the Surfside neighborhood
+     * Ultimate Family Townhouse — 3-level, 1,772 sq ft family suite with a
+                                   fenced "backyard" opening onto Surfside
+
+E) ENTERTAINMENT VENUES
+     * Royal Theater             — Broadway-style productions and originals
+     * AquaTheater (AquaDome)    — high-dive and water shows with robotic
+                                   arms and 3D "flying" rig
+     * Absolute Zero             — ice-skating shows and public free skate
+     * Music Hall                — two-story live-music venue
+     * The Attic                 — comedy club
+     * Spotlight Karaoke         — main-stage + private karaoke rooms
+
+F) BARS & LOUNGES
+     * Lou's Jazz 'n Blues       — jazz club in Central Park
+     * Dueling Pianos            — two-pianist request bar (Royal Promenade)
+     * Boleros                   — Latin-themed club with live music
+     * Schooner Bar              — nautical-themed piano bar
+     * Point & Feather           — English pub with live music
+     * Playmakers Sports Bar & Arcade
+     * The Overlook              — elevated hangout above the AquaDome
+     * Rye & Bean                — coffee shop + evening espresso cocktails
+     * 1400 Lobby Bar
+     * Bubbles                   — Champagne / sparkling-wine walk-up bar
+     * The Lime and Coconut      — multistory tiki bar (Chill Island)
+     * Cantina Fresca            — margarita bar (Chill Island)
+     * Trellis Bar               — Central Park cocktail bar
+     * Diamond Club              — Crown & Anchor elite lounge
+     * Desserted                 — milkshake bar (incl. adult versions)
+
+G) DINING (COMPLIMENTARY — included in fare)
+     * Main Dining Room          — three decks (Decks 3, 4, 5); table-service
+                                   dinner with daily themed menus
+     * Windjammer Marketplace    — globally-inspired buffet
+     * Surfside Eatery           — family-friendly buffet in Surfside
+     * Surfside Bites            — walk-up window with burgers, popcorn
+                                   chicken, mini doughnuts
+     * AquaDome Market           — food hall with 5 counters/stations
+     * El Loco Fresh             — self-serve Mexican
+     * Park Cafe                 — quick fresh eats in Central Park
+     * The Pearl Cafe            — paninis, salads, sweets (24/7)
+     * Sorrento's Pizza          — pizza by the slice
+     * Sprinkles                 — unlimited soft-serve ice cream
+     * Basecamp                  — walk-up snack window near Thrill Island
+
+H) DINING (SPECIALTY — à la carte / up-charge)
+     * Chops Grille              — signature steakhouse (Central Park)
+     * Giovanni's Italian Kitchen & Bar  — Italian (Royal Promenade)
+     * Izumi Sushi & Hibachi     — Japanese
+     * Hooked Seafood            — New England-style seafood (AquaDome)
+     * Wonderland                — "imaginative cuisine," themed experience
+     * Johnny Rockets            — classic American diner
+     * Empire Supper Club        — 1930s-NYC-themed upscale tasting (on
+                                   Icon of the Seas)
+     * Lincoln Park Supper Club  — supper-club experience (variant on Star
+                                   / Legend of the Seas)
+     * Hollywoodland Supper Club — supper-club experience (variant)
+     * Pier 7                    — all-day California-inspired brunch
+                                   (Surfside)
+     * Celebration Table         — private 12-seat celebration dinner
+     * The Grove                 — upscale Mediterranean (suite-exclusive)
+     * Coastal Kitchen           — Pacific-Coast-meets-Med (suite-exclusive)
+     * Starbucks                 — on the Royal Promenade
+
+I) SIGNATURE "FIRSTS" (ICON-CLASS)
+     * First suspended infinity pool at sea      (The Hideaway)
+     * Largest swim-up bar at sea                (Swim & Tonic)
+     * Largest pool at sea                       (Royal Bay)
+     * Largest waterpark at sea                  (Category 6, 6 slides)
+     * First LNG-powered ship in the fleet       (Icon of the Seas)
+     * First two-story Royal Promenade loop
+     * First Dueling Pianos venue in the fleet
+     * The Pearl — artistic glass sphere stairway (central Royal Promenade)
+
+================================================================================
+END OF FILE
+================================================================================

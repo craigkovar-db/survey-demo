@@ -1,0 +1,75 @@
+================================================================================
+BUILD_LOG.TXT
+================================================================================
+
+Session ID:       f99ed4df-b571-4cfc-80c7-77a9a501d434
+Session start:    2026-10-30T15:52:22Z  (2026-10-30 10:52:22 CDT)
+Current time:     2026-10-30T16:09:58Z  (2026-10-30 11:09:58 CDT)
+
+Note:             Initial synthetic data planning
+
+================================================================================
+
+Session ID:       f99ed4df-b571-4cfc-80c7-77a9a501d434
+Session start:    2026-10-30T16:58:55Z  (2026-10-30 11:58:55 CDT)
+Current time:     2026-10-30T17:34:36Z  (2026-10-30 12:34:36 CDT)
+
+Note:             Generated the initial synthetic data
+
+Prompt:
+    Create a notebook and job to generate the synthetic data for the initial
+    load. This should be parameterized to select either River Cruises or Ocean
+    Cruises. If River Cruises is selected then use the information from Viking,
+    if Ocen Cruises use the information from Royal. The data we will be
+    generating will be as follows:
+
+    - A Ship DIM table with ship name (Remove Viking from the name when
+      creating the table) and number of berths
+    - A Sailing DIM table that has references the ship DIM table, the
+      itenirary, sailing date, and number of sailing days
+    - Each ship should be constantly under sail with no more than 3% of ships
+      being idle at any given time
+    - A booking table that has a PAX_ID, a reference to the sailing, and what
+      they paid
+    - Each sailing should have enough bookings that it is at 95-110% capacity
+    - A survey table that references the booking table with the following
+      details
+    - 45% of passangers should have responded
+    - The survey should have the following structure:
+        - Overall Experience 0-10
+        - How Likely Are you to recommend this cruise 0-10
+        - How Likely are you to book another cruise with us 0-10
+        - How Satisfied were you with the stateroom 0-10
+        - Any comments on the stateroom (text). This should be populated for
+          15% of the respondants. With 90% being positive comments and 10%
+          being negative comments
+        - How Satisifed were you with the ammenities on this cruise 0-10
+        - Any comments on the ammenities (text). This should be populated for
+          35% of the respondants. With 70% being positive, 20% being neutral
+          and 10% being negative
+
+    Additionally choose 2 sailings that are at least 2 months apart and lower
+    the NPS score by 4 points, the likelyhood to book by 4 points, and for
+    the repondents that have a responce for the comments on the ammenities
+    choose the same ammenity and note problems with the ammenity as the cause
+    of the bad experience
+
+================================================================================
+
+Session ID:       f99ed4df-b571-4cfc-80c7-77a9a501d434
+Session start:    2026-10-30T17:55:42Z  (2026-10-30 12:55:42 CDT)
+Current time:     2026-10-30T18:05:55Z  (2026-10-30 13:05:55 CDT)
+
+Note:             Use AI Functions to process the unstructured comments in
+                  the data
+
+Prompt:
+    Create a new notebook and job that will read the incremental changes to
+    the survey table. This should use the ai_classify function to add new
+    columns to classify the sentiment for the stateroom comment, and
+    ammenity comment when populated. Additionally, use the ai_extract
+    function to extract the name(s) of the amenities in the amentity comment
+    and add a column to capture that information. Additionally, use
+    gte-large-en model to embed the amenity comment
+
+================================================================================

@@ -1,0 +1,83 @@
+{
+  "cleanup_duration": 0,
+  "creator_user_name": "craig.kovar@databricks.com",
+  "effective_performance_target": "PERFORMANCE_OPTIMIZED",
+  "end_time": 1793385584095,
+  "execution_duration": 2024000,
+  "job_id": 929445377105160,
+  "job_parameters": [
+    {
+      "default": "River",
+      "name": "cruise_type",
+      "value": "River"
+    },
+    {
+      "default": "1000",
+      "name": "max_new_rows",
+      "value": "0"
+    }
+  ],
+  "job_run_id": 584833101058445,
+  "number_in_job": 584833101058445,
+  "original_attempt_run_id": 584833101058445,
+  "run_duration": 2028752,
+  "run_id": 584833101058445,
+  "run_name": "survey_demo_enrich_survey_incremental",
+  "run_page_url": "https://fevm-serverless-stable-yrljz5.cloud.databricks.com/?o=7474649976481459#job/929445377105160/run/584833101058445",
+  "run_type": "JOB_RUN",
+  "setup_duration": 4000,
+  "start_time": 1793383555343,
+  "state": {
+    "life_cycle_state": "TERMINATED",
+    "result_state": "SUCCESS",
+    "state_message": "",
+    "user_cancelled_or_timedout": false
+  },
+  "status": {
+    "state": "TERMINATED",
+    "termination_details": {
+      "code": "SUCCESS",
+      "message": "",
+      "type": "SUCCESS"
+    }
+  },
+  "tasks": [
+    {
+      "attempt_number": 0,
+      "cleanup_duration": 0,
+      "effective_performance_target": "PERFORMANCE_OPTIMIZED",
+      "end_time": 1793385583616,
+      "environment_key": "serverless_env",
+      "execution_duration": 2024000,
+      "notebook_task": {
+        "base_parameters": {
+          "cruise_type": "{{job.parameters.cruise_type}}",
+          "max_new_rows": "{{job.parameters.max_new_rows}}"
+        },
+        "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/enrich_survey_incremental",
+        "source": "WORKSPACE"
+      },
+      "run_id": 1062451038470414,
+      "run_if": "ALL_SUCCESS",
+      "run_page_url": "https://fevm-serverless-stable-yrljz5.cloud.databricks.com/?o=7474649976481459#job/929445377105160/run/1062451038470414",
+      "setup_duration": 4000,
+      "start_time": 1793383555368,
+      "state": {
+        "life_cycle_state": "TERMINATED",
+        "result_state": "SUCCESS",
+        "state_message": "",
+        "user_cancelled_or_timedout": false
+      },
+      "status": {
+        "state": "TERMINATED",
+        "termination_details": {
+          "code": "SUCCESS",
+          "message": "",
+          "type": "SUCCESS"
+        }
+      },
+      "task_key": "enrich"
+    }
+  ],
+  "trigger": "ONE_TIME"
+}

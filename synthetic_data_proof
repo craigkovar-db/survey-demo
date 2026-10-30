@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "cleanup_duration": 0,
+    "creator_user_name": "craig.kovar@databricks.com",
+    "effective_performance_target": "PERFORMANCE_OPTIMIZED",
+    "end_time": 1793381369347,
+    "execution_duration": 57000,
+    "job_id": 841775374027922,
+    "job_parameters": [
+      {
+        "default": "River",
+        "name": "cruise_type",
+        "value": "River"
+      }
+    ],
+    "job_run_id": 720920194451504,
+    "number_in_job": 343770234011704,
+    "original_attempt_run_id": 343770234011704,
+    "run_id": 343770234011704,
+    "run_name": "generate_data",
+    "run_page_url": "https://fevm-serverless-stable-yrljz5.cloud.databricks.com/?o=7474649976481459#job/841775374027922/run/343770234011704",
+    "run_type": "JOB_RUN",
+    "setup_duration": 3000,
+    "start_time": 1793381309212,
+    "state": {
+      "life_cycle_state": "TERMINATED",
+      "result_state": "SUCCESS",
+      "state_message": "",
+      "user_cancelled_or_timedout": false
+    },
+    "status": {
+      "state": "TERMINATED",
+      "termination_details": {
+        "code": "SUCCESS",
+        "message": "",
+        "type": "SUCCESS"
+      }
+    },
+    "tasks": [
+      {
+        "attempt_number": 0,
+        "cleanup_duration": 0,
+        "effective_performance_target": "PERFORMANCE_OPTIMIZED",
+        "end_time": 1793381369347,
+        "environment_key": "serverless_env",
+        "execution_duration": 57000,
+        "notebook_task": {
+          "base_parameters": {
+            "cruise_type": "{{job.parameters.cruise_type}}"
+          },
+          "notebook_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/generate_synthetic_data",
+          "source": "WORKSPACE"
+        },
+        "run_id": 343770234011704,
+        "run_page_url": "https://fevm-serverless-stable-yrljz5.cloud.databricks.com/?o=7474649976481459#job/841775374027922/run/343770234011704",
+        "setup_duration": 3000,
+        "start_time": 1793381309212,
+        "state": {
+          "life_cycle_state": "TERMINATED",
+          "result_state": "SUCCESS",
+          "state_message": "",
+          "user_cancelled_or_timedout": false
+        },
+        "status": {
+          "state": "TERMINATED",
+          "termination_details": {
+            "code": "SUCCESS",
+            "message": "",
+            "type": "SUCCESS"
+          }
+        },
+        "task_key": "generate_data"
+      }
+    ],
+    "trigger": "ONE_TIME"
+  },
+  "notebook_output": {}
+}
