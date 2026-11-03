@@ -1,0 +1,178 @@
+================================================================================
+Viking River Cruise Survey Analytics — Genie Agent Test Proof
+================================================================================
+Created         : 2026-11-02T19:55:48Z
+Last updated    : (see export file for current update_time)
+Space ID        : 01f1d6f7660a1f65a083b31406069c4b
+Space URL       : https://fevm-serverless-stable-yrljz5.cloud.databricks.com/genie/rooms/01f1d6f7660a1f65a083b31406069c4b
+Parent path     : /Workspace/Users/craig.kovar@databricks.com/survey-demo/genie
+Warehouse ID    : 5f583e258cc6613a
+CLI profile     : DEFAULT
+
+================================================================================
+Design Summary
+================================================================================
+
+Title
+-----
+Viking River Cruise Survey Analytics
+
+Description (used for multi-agent routing)
+------------------------------------------
+Customer-satisfaction analytics for Viking River Cruises. Answers questions
+about NPS, stateroom and amenities satisfaction, overall experience, likelihood
+to book another sailing, and revenue tied to surveyed bookings. Grounded in two
+governed metric views over the post-cruise survey. Default:
+river_survey_enriched_mv. For amenity-specific questions (ranked amenities,
+per-amenity NPS, amenity sentiment): river_amenity_metrics_mv. Scope is survey
+data only.
+
+Data sources (metric views only — no raw tables)
+------------------------------------------------
+- serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_mv
+    Default source. Survey-grain KPIs: NPS, Survey Count, Total/Avg Amount
+    Paid, Avg Overall Experience, Avg Likelihood to Book Another, Avg Stateroom
+    Satisfaction, Avg Amenities Satisfaction. Dimensions: Ship Name, Ship
+    Class, Itinerary Name, Sailing Days, Amenities Mentioned (display-only
+    array_join), Sailing Date, Sailing Month.
+
+- serverless_stable_yrljz5_catalog.survey_demo.river_amenity_metrics_mv
+    Amenity-grain MV. Used ONLY for questions about a specific amenity, groups
+    by amenity, ranks amenities, or asks about amenity sentiment. Same base
+    measures (plus Mention Count and Distinct Surveys Mentioning). Dimensions
+    include Amenity Name + Amenity Sentiment. Weighted by amenity mentions, not
+    distinct surveys — so Total Amount Paid is NOT the true revenue total.
+
+Column configs (per-column GenAI context)
+-----------------------------------------
+- Entity matching + format assistance on Ship Name, Ship Class, Itinerary Name,
+  Amenity Name, Amenity Sentiment (the categorical strings users name
+  directly).
+- Format assistance only on Sailing Days, Sailing Date, Sailing Month.
+- Column-level descriptions and synonyms added where the display name alone is
+  not enough (e.g. Itinerary Name → "itinerary / route / cruise / sailing
+  route"; Amenity Name → "amenity / feature / onboard feature / facility").
+
+Text instructions (five canonical sections)
+-------------------------------------------
+- PURPOSE                                       — scope + audience
+- DISAMBIGUATION                                — the routing rule between MVs
+- DATA QUALITY NOTES                            — NPS formula + amenity weighting caveat
+- CONSTRAINTS                                   — scope-lock to survey satisfaction only
+- Instructions you must follow when providing summaries
+                                                — state time ranges, surface Survey/Mention Count on rankings,
+                                                  round NPS to 1 dp and 0-10 averages to 2 dp.
+
+Sample questions seeded in the UI (6 total)
+-------------------------------------------
+1. What was my NPS per month in 2026 by ship class?
+2. Which itinerary had the best NPS scores?
+3. Which amenities had the highest satisfaction score?
+4. What is the overall NPS across all river sailings?
+5. Which ships had the lowest stateroom satisfaction?
+6. Show me average amenities satisfaction by itinerary for 2026.
+
+Example SQL (6 teachable MEASURE() shapes, all pre-validated)
+-------------------------------------------------------------
+1. NPS per Ship Class + Sailing Month (time-filter + group-by-dim)
+2. Top itineraries by NPS (ranking with Survey Count surfaced)
+3. Top amenities by Avg Amenities Satisfaction (amenity-grain MV)
+4. Scalar MEASURE() with no GROUP BY (overall NPS)
+5. Lowest stateroom satisfaction by ship with HAVING sample-size floor
+6. CTE-then-reference pattern for worst-performing sailings
+
+All example SQL fully-qualifies every column with the MV identifier's last
+segment (per the Qualify-Columns-In-SQL rule).
+
+================================================================================
+Live Test 1 — default routing to river_survey_enriched_mv
+================================================================================
+
+User question
+-------------
+What is the overall NPS across all river sailings?
+
+Conversation ID : 01f1d6f791da143f9d18a999879d2c77
+Message ID      : 01f1d6f7922610a78a213ea2c8a2e0ce
+Status          : COMPLETED
+
+Genie's SQL (chose the correct default MV, used MEASURE() correctly)
+--------------------------------------------------------------------
+SELECT MEASURE(`NPS`) AS `nps`,
+       MEASURE(`Survey Count`) AS `survey_count`
+FROM `serverless_stable_yrljz5_catalog`.`survey_demo`.`river_survey_enriched_mv`
+
+Genie's description
+-------------------
+You want to see the overall Net Promoter Score (NPS) and the total number of
+surveys completed across all Viking River cruises.
+
+Genie's text reply
+------------------
+The overall NPS across all river sailings is **41.0**, based on **236,982**
+surveys.
+
+Pass criteria
+-------------
+PASS — picked river_survey_enriched_mv (default) over the amenity MV.
+PASS — used MEASURE() wrapper on both measures.
+PASS — surfaced Survey Count alongside the headline NPS (summary rule).
+PASS — NPS rounded to one decimal place (summary rule).
+PASS — scope stayed inside survey/satisfaction domain.
+
+================================================================================
+Live Test 2 — amenity-explicit routing to river_amenity_metrics_mv
+================================================================================
+
+User question
+-------------
+Which amenities had the highest satisfaction score?
+
+Status          : COMPLETED
+
+Genie's SQL (correctly routed to the amenity MV, added IS NOT NULL guard)
+-------------------------------------------------------------------------
+SELECT
+  `Amenity Name`,
+  MEASURE(`Avg Amenities Satisfaction`) AS `avg_satisfaction`,
+  MEASURE(`NPS`) AS `nps`,
+  MEASURE(`Mention Count`) AS `mentions`
+FROM `serverless_stable_yrljz5_catalog`.`survey_demo`.`river_amenity_metrics_mv`
+WHERE `Amenity Name` IS NOT NULL
+GROUP BY ALL
+ORDER BY `avg_satisfaction` DESC
+LIMIT 20
+
+Genie's text reply (abridged — first 500 chars)
+-----------------------------------------------
+Examples of the **highest-rated amenities** in the results all had an average
+satisfaction score of **10.00**, each based on **1 mention**.
+
+- **information stand** — **10.00** satisfaction, **1** mention
+- **stay** — **10.00** satisfaction, **1** mention
+- **pool table** — **10.00** satisfaction, **1** mention
+- **ai services** — **10.00** satisfaction, **1** mention
+- **lighting** — **10.00** satisfaction, **1** mention
+
+Across all **20 amenities shown**, every one is tied at **10.00** satisfa...
+
+Pass criteria
+-------------
+PASS — amenity-explicit question routed to river_amenity_metrics_mv.
+PASS — Mention Count surfaced to let the user judge sample size (summary rule).
+PASS — satisfaction averages rounded to two decimals (summary rule).
+PASS — Genie flagged the one-mention small-sample ties explicitly, matching
+       the small-sample awareness the summary rule was designed to produce.
+
+================================================================================
+Takeaways
+================================================================================
+- Default-vs-amenity routing works end-to-end as designed.
+- Column-config entity matching + the DISAMBIGUATION text block together are
+  sufficient to steer MV selection without duplicating any metric formula.
+- The two MVs' comments plus the summary-formatting rule give Genie enough
+  context that no SQL snippets or join specs were needed.
+- Known caveat visible in Test 2: a long tail of amenities has only 1-2
+  mentions, so a simple "top by satisfaction" leans on ties. If this is a
+  problem for a demo, consider adding a HAVING Mention Count >= N floor to the
+  example SQL for the amenity ranking question.

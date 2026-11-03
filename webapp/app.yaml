@@ -1,0 +1,32 @@
+command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+env:
+  - name: APP_NAME
+    value: "DataCruises Customer Insight"
+  # Dashboard embed values — consumed by the @databricks/aibi-client SDK via /api/config.
+  - name: DATABRICKS_HOST
+    value: "https://fevm-serverless-stable-yrljz5.cloud.databricks.com"
+  - name: WORKSPACE_ID
+    value: "7474649976481459"
+  - name: DASHBOARD_ID
+    value: "01f1d713815e18f8ab64879f1b9fce66"
+
+  # ---- Hybrid search (Explore page) ----
+  - name: LAKEBASE_PROJECT
+    value: "survey-demo-lakebase"
+  - name: LAKEBASE_BRANCH
+    value: "production"
+  - name: LAKEBASE_ENDPOINT
+    value: "primary"
+  - name: LAKEBASE_HOST
+    value: "ep-calm-moon-d8gqqayh.database.us-east-2.cloud.databricks.com"
+  - name: LAKEBASE_DB
+    value: "databricks_postgres"
+  - name: LAKEBASE_SCHEMA
+    value: "survey_demo"
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql_warehouse
+  - name: SURVEY_TABLE
+    value: "serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_joined"
+  - name: EMBED_ENDPOINT
+    value: "databricks-gte-large-en"

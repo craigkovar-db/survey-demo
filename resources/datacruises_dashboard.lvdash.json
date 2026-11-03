@@ -1,0 +1,451 @@
+{
+  "datasets": [
+    {
+      "name": "ds_survey",
+      "displayName": "River Cruise Surveys",
+      "queryLines": [
+        "SELECT ",
+        "  survey_id, ",
+        "  ship_name, ",
+        "  ship_class, ",
+        "  sailing_date, ",
+        "  DATE_TRUNC('MONTH', sailing_date) AS sailing_month, ",
+        "  overall_experience, ",
+        "  likelihood_to_recommend, ",
+        "  stateroom_satisfaction, ",
+        "  amenities_satisfaction, ",
+        "  CASE WHEN likelihood_to_recommend >= 9 THEN 1 ELSE 0 END AS promoter_flag, ",
+        "  CASE WHEN likelihood_to_recommend <= 6 THEN 1 ELSE 0 END AS detractor_flag ",
+        "FROM river_survey_enriched_joined"
+      ],
+      "columns": [
+        {
+          "displayName": "NPS",
+          "description": "100 * (promoters - detractors) / total, range -100 to +100.",
+          "expression": "100.0 * (SUM(`promoter_flag`) - SUM(`detractor_flag`)) / NULLIF(COUNT(1), 0)"
+        },
+        {
+          "displayName": "Survey Count",
+          "description": "Number of completed surveys.",
+          "expression": "COUNT(1)"
+        },
+        {
+          "displayName": "Avg Overall Experience",
+          "description": "Average 0-10 overall-experience rating.",
+          "expression": "AVG(`overall_experience`)"
+        },
+        {
+          "displayName": "Avg Stateroom Satisfaction",
+          "description": "Average 0-10 stateroom-satisfaction rating.",
+          "expression": "AVG(`stateroom_satisfaction`)"
+        },
+        {
+          "displayName": "Avg Amenities Satisfaction",
+          "description": "Average 0-10 amenities-satisfaction rating.",
+          "expression": "AVG(`amenities_satisfaction`)"
+        }
+      ]
+    },
+    {
+      "name": "ds_amenity",
+      "displayName": "Amenity Mentions",
+      "queryLines": [
+        "SELECT ",
+        "  amenity_name, ",
+        "  ship_name, ",
+        "  ship_class, ",
+        "  sailing_date, ",
+        "  amenity_sentiment, ",
+        "  CASE WHEN amenity_sentiment = 'positive' THEN 1 ELSE 0 END AS positive_flag, ",
+        "  CASE WHEN amenity_sentiment = 'negative' THEN 1 ELSE 0 END AS negative_flag ",
+        "FROM river_survey_enriched_amenity_exploded ",
+        "WHERE amenity_name IS NOT NULL"
+      ],
+      "columns": [
+        {
+          "displayName": "Mentions",
+          "description": "Number of amenity mentions.",
+          "expression": "COUNT(1)"
+        },
+        {
+          "displayName": "Positive Mentions",
+          "expression": "SUM(`positive_flag`)"
+        },
+        {
+          "displayName": "Negative Mentions",
+          "expression": "SUM(`negative_flag`)"
+        },
+        {
+          "displayName": "Net Sentiment",
+          "description": "(positive - negative) / total. Range -1 to +1.",
+          "expression": "(SUM(`positive_flag`) - SUM(`negative_flag`)) * 1.0 / NULLIF(COUNT(1), 0)"
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "overview",
+      "displayName": "Customer Insight",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# DataCruises Customer Insight\n"
+              ]
+            }
+          },
+          "position": {"x": 0, "y": 0, "width": 12, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "multilineTextboxSpec": {
+              "lines": [
+                "_Viking River Cruise satisfaction, grounded in the post-cruise survey. Filter by ship, class, or sailing date to drill in. Ask the Insight Agent (Genie button, top right) to explore anything you can't see on the page._"
+              ]
+            }
+          },
+          "position": {"x": 0, "y": 1, "width": 12, "height": 1}
+        },
+
+        {
+          "widget": {
+            "name": "filter_ship_name",
+            "queries": [
+              {"name": "q_survey", "query": {"datasetName": "ds_survey", "fields": [{"name": "ship_name", "expression": "`ship_name`"}], "disaggregated": false}},
+              {"name": "q_amenity", "query": {"datasetName": "ds_amenity", "fields": [{"name": "ship_name", "expression": "`ship_name`"}], "disaggregated": false}}
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {"fieldName": "ship_name", "displayName": "Ship Name", "queryName": "q_survey"},
+                  {"fieldName": "ship_name", "displayName": "Ship Name", "queryName": "q_amenity"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "Ship Name"}
+            }
+          },
+          "position": {"x": 0, "y": 2, "width": 4, "height": 2}
+        },
+        {
+          "widget": {
+            "name": "filter_ship_class",
+            "queries": [
+              {"name": "q_survey", "query": {"datasetName": "ds_survey", "fields": [{"name": "ship_class", "expression": "`ship_class`"}], "disaggregated": false}},
+              {"name": "q_amenity", "query": {"datasetName": "ds_amenity", "fields": [{"name": "ship_class", "expression": "`ship_class`"}], "disaggregated": false}}
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {"fieldName": "ship_class", "displayName": "Ship Class", "queryName": "q_survey"},
+                  {"fieldName": "ship_class", "displayName": "Ship Class", "queryName": "q_amenity"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "Ship Class"}
+            }
+          },
+          "position": {"x": 4, "y": 2, "width": 4, "height": 2}
+        },
+        {
+          "widget": {
+            "name": "filter_sailing_date",
+            "queries": [
+              {"name": "q_survey", "query": {"datasetName": "ds_survey", "fields": [{"name": "sailing_date", "expression": "`sailing_date`"}], "disaggregated": false}},
+              {"name": "q_amenity", "query": {"datasetName": "ds_amenity", "fields": [{"name": "sailing_date", "expression": "`sailing_date`"}], "disaggregated": false}}
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {"fieldName": "sailing_date", "displayName": "Sailing Date", "queryName": "q_survey"},
+                  {"fieldName": "sailing_date", "displayName": "Sailing Date", "queryName": "q_amenity"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "Sailing Date"}
+            }
+          },
+          "position": {"x": 8, "y": 2, "width": 4, "height": 2}
+        },
+
+        {
+          "widget": {
+            "name": "kpi_nps",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_survey", "fields": [{"name": "measure(NPS)", "expression": "MEASURE(`NPS`)"}], "disaggregated": false}}],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(NPS)",
+                  "format": {"type": "number-plain", "decimalPlaces": {"type": "max", "places": 1}},
+                  "displayName": "NPS"
+                }
+              },
+              "frame": {"title": "Net Promoter Score", "showTitle": true}
+            }
+          },
+          "position": {"x": 0, "y": 4, "width": 4, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi_overall",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_survey", "fields": [{"name": "measure(Avg Overall Experience)", "expression": "MEASURE(`Avg Overall Experience`)"}], "disaggregated": false}}],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Avg Overall Experience)",
+                  "format": {"type": "number-plain", "decimalPlaces": {"type": "max", "places": 2}},
+                  "formatTemplate": "{{ @formatted }} / 10",
+                  "displayName": "Overall Satisfaction"
+                }
+              },
+              "frame": {"title": "Overall Satisfaction", "showTitle": true}
+            }
+          },
+          "position": {"x": 4, "y": 4, "width": 4, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi_count",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_survey", "fields": [{"name": "measure(Survey Count)", "expression": "MEASURE(`Survey Count`)"}], "disaggregated": false}}],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Survey Count)",
+                  "format": {"type": "number-plain", "abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 1}},
+                  "displayName": "Surveys"
+                }
+              },
+              "frame": {"title": "Number of Surveys", "showTitle": true}
+            }
+          },
+          "position": {"x": 8, "y": 4, "width": 4, "height": 3}
+        },
+
+        {
+          "widget": {
+            "name": "section_trends",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Monthly Trends"
+              ]
+            }
+          },
+          "position": {"x": 0, "y": 7, "width": 12, "height": 1}
+        },
+
+        {
+          "widget": {
+            "name": "chart_nps_by_month",
+            "queries": [{"name": "main_query", "query": {
+              "datasetName": "ds_survey",
+              "fields": [
+                {"name": "monthly(sailing_date)", "expression": "DATE_TRUNC(\"MONTH\", `sailing_date`)"},
+                {"name": "measure(NPS)", "expression": "MEASURE(`NPS`)"}
+              ],
+              "disaggregated": false,
+              "orders": [{"direction": "ASC", "expression": "DATE_TRUNC(\"MONTH\", `sailing_date`)"}]
+            }}],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {"fieldName": "monthly(sailing_date)", "scale": {"type": "temporal"}, "displayName": "Month"},
+                "y": {"fieldName": "measure(NPS)", "scale": {"type": "quantitative"}, "displayName": "NPS"}
+              },
+              "mark": {"colors": [{"hex": "#8B0000"}]},
+              "frame": {"showTitle": true, "title": "NPS by Month"}
+            }
+          },
+          "position": {"x": 0, "y": 8, "width": 6, "height": 5}
+        },
+        {
+          "widget": {
+            "name": "chart_overall_by_month",
+            "queries": [{"name": "main_query", "query": {
+              "datasetName": "ds_survey",
+              "fields": [
+                {"name": "monthly(sailing_date)", "expression": "DATE_TRUNC(\"MONTH\", `sailing_date`)"},
+                {"name": "measure(Avg Overall Experience)", "expression": "MEASURE(`Avg Overall Experience`)"}
+              ],
+              "disaggregated": false,
+              "orders": [{"direction": "ASC", "expression": "DATE_TRUNC(\"MONTH\", `sailing_date`)"}]
+            }}],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {"fieldName": "monthly(sailing_date)", "scale": {"type": "temporal"}, "displayName": "Month"},
+                "y": {"fieldName": "measure(Avg Overall Experience)", "scale": {"type": "quantitative", "domainMin": 0, "domainMax": 10}, "displayName": "Overall (0-10)"}
+              },
+              "mark": {"colors": [{"hex": "#0A2A4A"}]},
+              "frame": {"showTitle": true, "title": "Overall Satisfaction by Month"}
+            }
+          },
+          "position": {"x": 6, "y": 8, "width": 6, "height": 5}
+        },
+        {
+          "widget": {
+            "name": "chart_stateroom_by_month",
+            "queries": [{"name": "main_query", "query": {
+              "datasetName": "ds_survey",
+              "fields": [
+                {"name": "monthly(sailing_date)", "expression": "DATE_TRUNC(\"MONTH\", `sailing_date`)"},
+                {"name": "measure(Avg Stateroom Satisfaction)", "expression": "MEASURE(`Avg Stateroom Satisfaction`)"}
+              ],
+              "disaggregated": false,
+              "orders": [{"direction": "ASC", "expression": "DATE_TRUNC(\"MONTH\", `sailing_date`)"}]
+            }}],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {"fieldName": "monthly(sailing_date)", "scale": {"type": "temporal"}, "displayName": "Month"},
+                "y": {"fieldName": "measure(Avg Stateroom Satisfaction)", "scale": {"type": "quantitative", "domainMin": 0, "domainMax": 10}, "displayName": "Stateroom (0-10)"}
+              },
+              "mark": {"colors": [{"hex": "#B8860B"}]},
+              "frame": {"showTitle": true, "title": "Stateroom Satisfaction by Month"}
+            }
+          },
+          "position": {"x": 0, "y": 13, "width": 6, "height": 5}
+        },
+        {
+          "widget": {
+            "name": "chart_count_by_month",
+            "queries": [{"name": "main_query", "query": {
+              "datasetName": "ds_survey",
+              "fields": [
+                {"name": "monthly(sailing_date)", "expression": "DATE_TRUNC(\"MONTH\", `sailing_date`)"},
+                {"name": "measure(Survey Count)", "expression": "MEASURE(`Survey Count`)"}
+              ],
+              "disaggregated": false,
+              "orders": [{"direction": "ASC", "expression": "DATE_TRUNC(\"MONTH\", `sailing_date`)"}]
+            }}],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "monthly(sailing_date)", "scale": {"type": "temporal"}, "displayName": "Month"},
+                "y": {"fieldName": "measure(Survey Count)", "scale": {"type": "quantitative"}, "displayName": "Surveys"}
+              },
+              "mark": {"colors": [{"hex": "#0A2A4A"}]},
+              "frame": {"showTitle": true, "title": "Number of Surveys by Month"}
+            }
+          },
+          "position": {"x": 6, "y": 13, "width": 6, "height": 5}
+        },
+
+        {
+          "widget": {
+            "name": "section_trending",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Amenity Trending\n_Top amenities by mention volume. Bar color shows net sentiment: green = mostly positive, red = mostly negative._"
+              ]
+            }
+          },
+          "position": {"x": 0, "y": 18, "width": 12, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "chart_amenity",
+            "queries": [{"name": "main_query", "query": {
+              "datasetName": "ds_amenity",
+              "fields": [
+                {"name": "amenity_name", "expression": "`amenity_name`"},
+                {"name": "measure(Mentions)", "expression": "MEASURE(`Mentions`)"},
+                {"name": "measure(Net Sentiment)", "expression": "MEASURE(`Net Sentiment`)"}
+              ],
+              "disaggregated": false,
+              "orders": [{"direction": "DESC", "expression": "MEASURE(`Mentions`)"}]
+            }}],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "measure(Mentions)", "scale": {"type": "quantitative"}, "displayName": "Mentions"},
+                "y": {"fieldName": "amenity_name", "scale": {"type": "categorical"}, "displayName": "Amenity"},
+                "color": {
+                  "fieldName": "measure(Net Sentiment)",
+                  "displayName": "Net Sentiment",
+                  "scale": {
+                    "type": "quantitative",
+                    "domainMin": -1,
+                    "domainMax": 1,
+                    "colorRamp": {"mode": "custom-diverging", "colors": {"start": "#8B0000", "middle": "#CCCCCC", "end": "#1E7A3C"}}
+                  }
+                }
+              },
+              "frame": {"showTitle": true, "title": "Amenity Mentions × Sentiment"}
+            }
+          },
+          "position": {"x": 0, "y": 19, "width": 8, "height": 8}
+        },
+        {
+          "widget": {
+            "name": "table_amenity",
+            "queries": [{"name": "main_query", "query": {
+              "datasetName": "ds_amenity",
+              "fields": [
+                {"name": "amenity_name", "expression": "`amenity_name`"},
+                {"name": "measure(Mentions)", "expression": "MEASURE(`Mentions`)"},
+                {"name": "measure(Positive Mentions)", "expression": "MEASURE(`Positive Mentions`)"},
+                {"name": "measure(Negative Mentions)", "expression": "MEASURE(`Negative Mentions`)"},
+                {"name": "measure(Net Sentiment)", "expression": "MEASURE(`Net Sentiment`)"}
+              ],
+              "disaggregated": false,
+              "orders": [{"direction": "DESC", "expression": "MEASURE(`Mentions`)"}]
+            }}],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "amenity_name", "displayName": "Amenity"},
+                  {"fieldName": "measure(Mentions)", "displayName": "Mentions", "numberFormat": "0,0"},
+                  {"fieldName": "measure(Positive Mentions)", "displayName": "Positive", "numberFormat": "0,0"},
+                  {"fieldName": "measure(Negative Mentions)", "displayName": "Negative", "numberFormat": "0,0"},
+                  {"fieldName": "measure(Net Sentiment)", "displayName": "Net Sentiment", "numberFormat": "+0.00;-0.00"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "Amenity Detail"}
+            }
+          },
+          "position": {"x": 8, "y": 19, "width": 4, "height": 8}
+        }
+      ]
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {"light": "#F8F5F0", "dark": "#1F272D"},
+      "widgetBackgroundColor": {"light": "#FFFFFF", "dark": "#11171C"},
+      "fontColor":             {"light": "#0A2A4A", "dark": "#E8ECF0"},
+      "selectionColor":        {"light": "#8B0000", "dark": "#FF7054"},
+      "visualizationColors": [
+        "#8B0000", "#0A2A4A", "#B8860B", "#1E7A3C",
+        "#3C6997", "#DE5582", "#FFA600"
+      ],
+      "widgetHeaderAlignment": "LEFT"
+    },
+    "genieSpace": {
+      "isEnabled": true,
+      "overrideId": "01f1d6f7660a1f65a083b31406069c4b",
+      "enablementMode": "ENABLED"
+    }
+  }
+}

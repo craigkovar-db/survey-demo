@@ -1,0 +1,19 @@
+[project]
+name = "datacruises-webapp"
+version = "0.1.0"
+description = "DataCruises Customer Insight — React + FastAPI, deployable to Databricks Apps"
+readme = "README.md"
+# Databricks Apps runtime is Python 3.11; pin here so uv-created local venvs match.
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi==0.115.4",
+    "uvicorn[standard]==0.32.0",
+    "databricks-sdk>=0.96.0,<1.0",
+    "databricks-sql-connector==3.4.0",
+    "psycopg2-binary==2.9.9",
+    "openai==1.54.3",
+    "python-dotenv==1.0.1",
+]
+
+[tool.uv]
+# No dev-only deps yet.

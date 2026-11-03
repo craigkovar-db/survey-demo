@@ -83,3 +83,42 @@ Note:             Created Lakebase Instance, Sync Table + Companion TSVector
                   subdirectories
 
 ================================================================================
+
+Session ID:       f99ed4df-b571-4cfc-80c7-77a9a501d434
+Session start:    2026-11-02T19:25:45Z  (2026-11-02 13:25:45 CST)
+Current time:     2026-11-02T20:06:40Z  (2026-11-02 14:06:40 CST)
+
+Note:             Created the Metric Views and Genie Agent to enable
+                  conversational analytics
+
+Prompts:
+
+    [Metric Views]
+    Create a metric view named river_survey_enriched_mv based upon the table
+    river_survey_enriched but join the necessary tables to support any
+    required dimensions and measures. Create dimensions for the ship_name,
+    ship_class, itenerary_name, sailing_days, named amenities. For the
+    measures, calculate the NPS, the amount_paid, overall_experience,
+    likelyhood to book another room, stateroom satisfaction, and the
+    amenities satisfaction. If you are unsure ask clarifying questions
+
+    [Genie Agent]
+    Create a genie space that will use the two MVs we just created. This
+    genie should be a helpful agent to answer questions about customer
+    satisfaction based upon the survey and nothing else. Make sure it is
+    clear that most questions should go to the river_survey_enriched_mv
+    unless the question explicitaly relates to amenities, then use the
+    river_amenity_metrics_mv. Some sample questions would be similiar to
+    What was my NPS per month in 2026 by ship class? Which itenerary had the
+    best NPS scores? Which amenities had the highest satisfaction score?
+
+================================================================================
+
+Session ID:       f99ed4df-b571-4cfc-80c7-77a9a501d434
+Session start:    2026-11-02T22:00:00Z  (2026-11-02 16:00:00 CST)
+Current time:     2026-11-03T00:42:00Z  (2026-11-02 18:42:00 CST)
+
+Note:             Build a REACT + FastAPI Databricks app that can also be
+                  run locally for development and testing
+
+================================================================================

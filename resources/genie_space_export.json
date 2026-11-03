@@ -1,0 +1,322 @@
+{
+  "space_id": "01f1d6f7660a1f65a083b31406069c4b",
+  "title": "Viking River Cruise Survey Analytics",
+  "description": "Customer-satisfaction analytics for Viking River Cruises. Answers questions about NPS, stateroom and amenities satisfaction, overall experience, likelihood to book another sailing, and revenue tied to surveyed bookings. Grounded in two governed metric views over the post-cruise survey. Default: river_survey_enriched_mv. For amenity-specific questions (ranked amenities, per-amenity NPS, amenity sentiment): river_amenity_metrics_mv. Scope is survey data only.",
+  "warehouse_id": "5f583e258cc6613a",
+  "parent_path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/genie",
+  "etag": "0c53eb0f5d8bebca9942746cad979b1e296c9770c16f0acc90005fa3265bb3f5",
+  "create_time": "2026-11-02T19:55:48.245Z",
+  "update_time": "2026-11-02T19:56:16.047Z",
+  "serialized_space": {
+    "version": 2,
+    "config": {
+      "sample_questions": [
+        {
+          "id": "1569f6deb2da40efb6fcd9ef4ee8e3a3",
+          "question": [
+            "Which ships had the lowest stateroom satisfaction?"
+          ]
+        },
+        {
+          "id": "6cdac2f4fce84eec80de9f718661fe89",
+          "question": [
+            "What was my NPS per month in 2026 by ship class?"
+          ]
+        },
+        {
+          "id": "83674969f0fd443fbd67aa70a77012e2",
+          "question": [
+            "Show me average amenities satisfaction by itinerary for 2026."
+          ]
+        },
+        {
+          "id": "84cb4cdc23fb42518088c767b8c8b2f1",
+          "question": [
+            "Which amenities had the highest satisfaction score?"
+          ]
+        },
+        {
+          "id": "cdf58e5a0fec46cf83bda7dbbdcf2bf7",
+          "question": [
+            "Which itinerary had the best NPS scores?"
+          ]
+        },
+        {
+          "id": "cff50ba5b11743cdab09478dececc287",
+          "question": [
+            "What is the overall NPS across all river sailings?"
+          ]
+        }
+      ]
+    },
+    "data_sources": {
+      "tables": [
+        {
+          "identifier": "serverless_stable_yrljz5_catalog.survey_demo.river_amenity_metrics_mv",
+          "column_configs": [
+            {
+              "column_name": "Amenity Name",
+              "description": [
+                "Lower-cased, trimmed amenity name extracted by ai_extract from the amenity comment, e.g. spa, aquavit terrace, main lounge."
+              ],
+              "synonyms": [
+                "amenity",
+                "feature",
+                "onboard feature",
+                "facility"
+              ],
+              "enable_format_assistance": true,
+              "enable_entity_matching": true
+            },
+            {
+              "column_name": "Amenity Sentiment",
+              "description": [
+                "ai_classify sentiment on the amenity comment: positive, neutral, or negative."
+              ],
+              "synonyms": [
+                "sentiment",
+                "amenity feedback tone"
+              ],
+              "enable_format_assistance": true,
+              "enable_entity_matching": true
+            },
+            {
+              "column_name": "Itinerary Name",
+              "enable_format_assistance": true,
+              "enable_entity_matching": true
+            },
+            {
+              "column_name": "Sailing Date",
+              "enable_format_assistance": true
+            },
+            {
+              "column_name": "Sailing Days",
+              "enable_format_assistance": true
+            },
+            {
+              "column_name": "Ship Class",
+              "enable_format_assistance": true,
+              "enable_entity_matching": true
+            },
+            {
+              "column_name": "Ship Name",
+              "enable_format_assistance": true,
+              "enable_entity_matching": true
+            }
+          ]
+        },
+        {
+          "identifier": "serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_mv",
+          "column_configs": [
+            {
+              "column_name": "Itinerary Name",
+              "description": [
+                "Named Viking river itinerary, e.g. Rhine Getaway, Grand European Tour, Danube Waltz."
+              ],
+              "synonyms": [
+                "itinerary",
+                "route",
+                "cruise",
+                "sailing route"
+              ],
+              "enable_format_assistance": true,
+              "enable_entity_matching": true
+            },
+            {
+              "column_name": "Sailing Date",
+              "description": [
+                "Sailing start date."
+              ],
+              "enable_format_assistance": true
+            },
+            {
+              "column_name": "Sailing Days",
+              "description": [
+                "Duration of the sailing in days."
+              ],
+              "synonyms": [
+                "cruise length",
+                "sailing length",
+                "trip length",
+                "days"
+              ],
+              "enable_format_assistance": true
+            },
+            {
+              "column_name": "Sailing Month",
+              "description": [
+                "Sailing month, truncated to the first of the month."
+              ],
+              "enable_format_assistance": true
+            },
+            {
+              "column_name": "Ship Class",
+              "description": [
+                "Ship class: Longship, Longship-Seine, Douro, Nile, Mekong, or Mississippi."
+              ],
+              "enable_format_assistance": true,
+              "enable_entity_matching": true
+            },
+            {
+              "column_name": "Ship Name",
+              "description": [
+                "River ship name (Viking prefix already stripped)."
+              ],
+              "enable_format_assistance": true,
+              "enable_entity_matching": true
+            }
+          ]
+        }
+      ]
+    },
+    "instructions": {
+      "text_instructions": [
+        {
+          "id": "41f73423e89e4bd48b9e92b67922d481",
+          "content": [
+            "## PURPOSE\n",
+            "- Answer questions about Viking River Cruise customer satisfaction, derived from the post-cruise survey.\n",
+            "- Users are commercial, product, and operations stakeholders at a cruise line.\n",
+            "\n",
+            "## DISAMBIGUATION\n",
+            "- DEFAULT to river_survey_enriched_mv for every question. It covers NPS, overall experience, stateroom satisfaction, amenities satisfaction, likelihood to book another, and revenue (amount paid) at the survey grain.\n",
+            "- Use river_amenity_metrics_mv ONLY when the question explicitly asks about a specific amenity, groups by amenity, ranks amenities, or asks about amenity sentiment. Treat 'spa', 'aquavit terrace', 'main lounge', 'library', 'reading nooks', 'evening shows', and similar as amenity names.\n",
+            "- 'Amenities satisfaction' as a measure stays on river_survey_enriched_mv \u2014 it is the survey-level 0-10 rating, not per-amenity.\n",
+            "- Fiscal year is the calendar year. 'This year' means 2026 unless the user says otherwise.\n",
+            "\n",
+            "## DATA QUALITY NOTES\n",
+            "- NPS is 100 x (promoters(9-10) - detractors(0-6)) / total surveys. Range -100 to +100.\n",
+            "- In river_amenity_metrics_mv a survey mentioning N amenities contributes N rows, so Total Amount Paid is NOT the true revenue total and amenity-weighted NPS is weighted by mentions, not distinct surveys. For unbiased revenue or NPS use river_survey_enriched_mv.\n",
+            "- Only surveys with amenity_names populated appear in river_amenity_metrics_mv.\n",
+            "\n",
+            "## CONSTRAINTS\n",
+            "- Answer only questions about the Viking River Cruise survey (satisfaction, NPS, ratings, amenity feedback, revenue tied to surveyed bookings). Decline anything outside that scope.\n",
+            "- Do not fabricate ship names, itineraries, or amenities. Use the values that appear in the MVs.\n",
+            "\n",
+            "## Instructions you must follow when providing summaries\n",
+            "- Always state the time range used when answering a trend question.\n",
+            "- When ranking entities by NPS or a satisfaction average, surface the Survey Count (or Mention Count for amenity MV) so the user can judge sample size.\n",
+            "- Round NPS to one decimal place and 0-10 satisfaction averages to two decimal places."
+          ]
+        }
+      ],
+      "example_question_sqls": [
+        {
+          "id": "4e8a2750bc024cc68a0be207decbeae3",
+          "question": [
+            "Show the worst-performing sailings and whether specific amenities drove the drop."
+          ],
+          "sql": [
+            "WITH bad_sailings AS (\n",
+            "  SELECT river_survey_enriched_mv.`Itinerary Name` AS itinerary,\n",
+            "         river_survey_enriched_mv.`Sailing Date`   AS sailing_date,\n",
+            "         MEASURE(river_survey_enriched_mv.`NPS`) AS nps,\n",
+            "         MEASURE(river_survey_enriched_mv.`Survey Count`) AS survey_count\n",
+            "  FROM serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_mv\n",
+            "  GROUP BY ALL\n",
+            "  HAVING MEASURE(river_survey_enriched_mv.`Survey Count`) >= 25\n",
+            "  ORDER BY nps ASC\n",
+            "  LIMIT 5\n",
+            ")\n",
+            "SELECT b.itinerary, b.sailing_date, b.nps, b.survey_count\n",
+            "FROM bad_sailings b\n",
+            "ORDER BY b.nps ASC"
+          ],
+          "usage_guidance": [
+            "CTE-then-reference pattern \u2014 wrap a MEASURE() query in a CTE when you need to filter or re-sort its results. For per-amenity drill-in, re-query river_amenity_metrics_mv filtered to the same Itinerary Name and Sailing Date."
+          ]
+        },
+        {
+          "id": "882e4545dae6403bb2970d668c053a42",
+          "question": [
+            "Which amenities had the highest satisfaction score?"
+          ],
+          "sql": [
+            "SELECT river_amenity_metrics_mv.`Amenity Name`,\n",
+            "       MEASURE(river_amenity_metrics_mv.`Avg Amenities Satisfaction`) AS avg_satisfaction,\n",
+            "       MEASURE(river_amenity_metrics_mv.`NPS`) AS nps,\n",
+            "       MEASURE(river_amenity_metrics_mv.`Mention Count`) AS mentions\n",
+            "FROM serverless_stable_yrljz5_catalog.survey_demo.river_amenity_metrics_mv\n",
+            "GROUP BY ALL\n",
+            "ORDER BY avg_satisfaction DESC\n",
+            "LIMIT 20"
+          ],
+          "usage_guidance": [
+            "Amenity-grain question \u2014 use river_amenity_metrics_mv. Mentions help the user judge sample size."
+          ]
+        },
+        {
+          "id": "a15c3c491e6445b79bd0a0954fd05ac1",
+          "question": [
+            "What was NPS per month in 2026 by ship class?"
+          ],
+          "sql": [
+            "SELECT river_survey_enriched_mv.`Ship Class`,\n",
+            "       river_survey_enriched_mv.`Sailing Month`,\n",
+            "       MEASURE(river_survey_enriched_mv.`NPS`) AS nps,\n",
+            "       MEASURE(river_survey_enriched_mv.`Survey Count`) AS survey_count\n",
+            "FROM serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_mv\n",
+            "WHERE YEAR(river_survey_enriched_mv.`Sailing Date`) = 2026\n",
+            "GROUP BY ALL\n",
+            "ORDER BY river_survey_enriched_mv.`Ship Class`, river_survey_enriched_mv.`Sailing Month`"
+          ],
+          "usage_guidance": [
+            "Monthly NPS trend by ship class. Uses the survey-grain MV and groups by Ship Class + Sailing Month."
+          ]
+        },
+        {
+          "id": "c4572bd7ad6f4b81aa11b2c582851cbf",
+          "question": [
+            "What is the overall NPS across all river sailings?"
+          ],
+          "sql": [
+            "SELECT MEASURE(river_survey_enriched_mv.`NPS`) AS nps,\n",
+            "       MEASURE(river_survey_enriched_mv.`Survey Count`) AS survey_count\n",
+            "FROM serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_mv"
+          ],
+          "usage_guidance": [
+            "Scalar MEASURE() pattern \u2014 no GROUP BY needed when the user wants a single rolled-up number."
+          ]
+        },
+        {
+          "id": "d064ee0de7eb4d94837cc1f206b218d6",
+          "question": [
+            "Which itinerary had the best NPS scores?"
+          ],
+          "sql": [
+            "SELECT river_survey_enriched_mv.`Itinerary Name`,\n",
+            "       MEASURE(river_survey_enriched_mv.`NPS`) AS nps,\n",
+            "       MEASURE(river_survey_enriched_mv.`Survey Count`) AS survey_count\n",
+            "FROM serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_mv\n",
+            "GROUP BY ALL\n",
+            "ORDER BY nps DESC\n",
+            "LIMIT 10"
+          ],
+          "usage_guidance": [
+            "Ranking example on survey-grain MV. Order by NPS descending, include Survey Count to flag small samples."
+          ]
+        },
+        {
+          "id": "f28044028bb743b384a3fbd5c1193a78",
+          "question": [
+            "Which ships had the lowest stateroom satisfaction?"
+          ],
+          "sql": [
+            "SELECT river_survey_enriched_mv.`Ship Name`,\n",
+            "       river_survey_enriched_mv.`Ship Class`,\n",
+            "       MEASURE(river_survey_enriched_mv.`Avg Stateroom Satisfaction`) AS avg_stateroom,\n",
+            "       MEASURE(river_survey_enriched_mv.`Survey Count`) AS survey_count\n",
+            "FROM serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_mv\n",
+            "GROUP BY ALL\n",
+            "HAVING MEASURE(river_survey_enriched_mv.`Survey Count`) >= 50\n",
+            "ORDER BY avg_stateroom ASC\n",
+            "LIMIT 10"
+          ],
+          "usage_guidance": [
+            "Ranking by a satisfaction average on the survey-grain MV; HAVING filters out small-sample ships."
+          ]
+        }
+      ]
+    }
+  }
+}
