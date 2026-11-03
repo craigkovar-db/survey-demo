@@ -68,6 +68,44 @@ def api_search(
         )
 
 
+@app.post("/api/genie-one/ask")
+async def api_genie_one_ask(body: dict) -> JSONResponse:
+    """Ask Genie One (blocking). Body: {"question": str, "conversation_id": str?}.
+    Returns {status, conversation_id, text, tool_calls}."""
+    from backend import genie_one
+
+    try:
+        answer = genie_one.ask(
+            question=body.get("question", ""),
+            conversation_id=body.get("conversation_id"),
+        )
+        return JSONResponse(answer)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(
+            status_code=500,
+            detail=f"{type(e).__name__}: {e}",
+        )
+
+
+@app.post("/api/genie-one/ask-stream")
+async def api_genie_one_ask_stream(body: dict) -> StreamingResponse:
+    """Streaming (SSE) version of /api/genie-one/ask.
+
+    Yields progress events (model thoughts, SQL being executed, assets being
+    inspected) as they happen, then a final `complete` event with the full
+    synthesized answer."""
+    from backend import genie_one
+
+    return StreamingResponse(
+        genie_one.ask_stream(
+            question=body.get("question", ""),
+            conversation_id=body.get("conversation_id"),
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @app.get("/api/search-stream")
 def api_search_stream(
     q: str = Query("", description="Search query"),

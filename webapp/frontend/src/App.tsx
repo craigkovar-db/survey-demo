@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import ChatDrawer from './components/ChatDrawer'
 import TopBar from './components/TopBar'
 import DashboardPage from './pages/Dashboard'
 import ExplorePage from './pages/Explore'
@@ -44,6 +45,9 @@ export default function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
+
+      {/* Chat drawer lives in the global layout so it's available on every page. */}
+      <ChatDrawer />
     </div>
   )
 }

@@ -251,6 +251,7 @@ dependencies = [
     { name = "openai" },
     { name = "psycopg2-binary" },
     { name = "python-dotenv" },
+    { name = "requests" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -262,6 +263,7 @@ requires-dist = [
     { name = "openai", specifier = "==1.54.3" },
     { name = "psycopg2-binary", specifier = "==2.9.9" },
     { name = "python-dotenv", specifier = "==1.0.1" },
+    { name = "requests", specifier = ">=2.32,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.32.0" },
 ]
 
