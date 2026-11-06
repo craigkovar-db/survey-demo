@@ -10,10 +10,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+
+from backend.auth import user_token_from
 
 # Load .env for local dev (no-op if the file is absent, e.g. on Databricks Apps
 # where env vars are injected via app.yaml).
@@ -51,16 +53,21 @@ def health() -> dict:
 
 @app.get("/api/search")
 def api_search(
+    request: Request,
     q: str = Query("", description="Search query"),
     limit: int = Query(20, ge=1, le=100),
 ) -> JSONResponse:
     """Hybrid search over Lakebase + UC enrichment (blocking, non-streaming).
 
-    Returns a JSON array of result rows ordered by fused score (desc)."""
+    Returns a JSON array of result rows ordered by fused score (desc).
+
+    OBO: if the request carries `X-Forwarded-Access-Token` (Databricks Apps
+    with user authorization), every downstream call authenticates as the end
+    user and their UC permissions govern what they see."""
     try:
         from backend.search import search as run_search
 
-        return JSONResponse(run_search(q, limit))
+        return JSONResponse(run_search(q, limit, user_token=user_token_from(request)))
     except Exception as e:  # surface the full error to the frontend for now
         raise HTTPException(
             status_code=500,
@@ -69,15 +76,19 @@ def api_search(
 
 
 @app.post("/api/genie-one/ask")
-async def api_genie_one_ask(body: dict) -> JSONResponse:
+async def api_genie_one_ask(request: Request, body: dict) -> JSONResponse:
     """Ask Genie One (blocking). Body: {"question": str, "conversation_id": str?}.
-    Returns {status, conversation_id, text, tool_calls}."""
+    Returns {status, conversation_id, text, tool_calls}.
+
+    OBO: uses `X-Forwarded-Access-Token` when present so Genie answers with
+    the end user's UC grants."""
     from backend import genie_one
 
     try:
         answer = genie_one.ask(
             question=body.get("question", ""),
             conversation_id=body.get("conversation_id"),
+            user_token=user_token_from(request),
         )
         return JSONResponse(answer)
     except Exception as e:  # noqa: BLE001
@@ -88,18 +99,24 @@ async def api_genie_one_ask(body: dict) -> JSONResponse:
 
 
 @app.post("/api/genie-one/ask-stream")
-async def api_genie_one_ask_stream(body: dict) -> StreamingResponse:
+async def api_genie_one_ask_stream(
+    request: Request, body: dict,
+) -> StreamingResponse:
     """Streaming (SSE) version of /api/genie-one/ask.
 
     Yields progress events (model thoughts, SQL being executed, assets being
     inspected) as they happen, then a final `complete` event with the full
-    synthesized answer."""
+    synthesized answer. OBO via `X-Forwarded-Access-Token`."""
     from backend import genie_one
 
+    # Extract token BEFORE building the generator — the Request object is
+    # only valid inside the route function, not inside the SSE stream.
+    user_token = user_token_from(request)
     return StreamingResponse(
         genie_one.ask_stream(
             question=body.get("question", ""),
             conversation_id=body.get("conversation_id"),
+            user_token=user_token,
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
@@ -108,16 +125,20 @@ async def api_genie_one_ask_stream(body: dict) -> StreamingResponse:
 
 @app.get("/api/search-stream")
 def api_search_stream(
+    request: Request,
     q: str = Query("", description="Search query"),
     limit: int = Query(20, ge=1, le=100),
 ) -> StreamingResponse:
     """Streaming (SSE) version of /api/search — yields per-step status events
     so the UI can show which stage of the pipeline is running (embedding →
-    Lakebase hybrid search → UC enrichment) and how long each took."""
+    Lakebase hybrid search → UC enrichment) and how long each took.
+
+    OBO: every stage uses `X-Forwarded-Access-Token` when present."""
     from backend.search import search_stream
 
+    user_token = user_token_from(request)
     return StreamingResponse(
-        search_stream(q, limit),
+        search_stream(q, limit, user_token=user_token),
         media_type="text/event-stream",
         headers={
             # Disable proxy buffering so events arrive incrementally.

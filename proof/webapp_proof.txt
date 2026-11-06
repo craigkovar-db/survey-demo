@@ -1,0 +1,240 @@
+================================================================================
+DATACRUISES_WEBAPP_PROOF.TXT — Databricks App end-to-end verification
+================================================================================
+Timestamp (UTC):     2026-11-06T04:53:32Z
+Timestamp (local):   2026-11-05 22:53:32 CST
+App URL:             https://survey-demo-7474649976481459.aws.databricksapps.com
+App name:            survey-demo
+App ID:              9b708965-6ba9-4e7d-aac6-a8fa606dc633
+Workspace:           fevm-serverless-stable-yrljz5
+Workspace ID:        7474649976481459
+Source code path:    /Workspace/Users/craig.kovar@databricks.com/survey-demo/webapp
+Git commit:          a7ce0a6a1941b1b6ae78fdda7a6d2fd4d9a13873
+CLI profile:         DEFAULT
+
+--------------------------------------------------------------------------------
+DEPLOYMENT STATUS
+--------------------------------------------------------------------------------
+app_status:          RUNNING    "App has status: App is running"
+compute_status:      ACTIVE     "App compute is running."
+deployment_status:   SUCCEEDED  "App started successfully"
+compute_size:        MEDIUM
+Last deploy (UTC):   2026-11-06T04:49:40Z
+Service principal:   app-37kv5k survey-demo (id 78714144322634)
+
+--------------------------------------------------------------------------------
+OBO SCOPE CONFIGURATION
+--------------------------------------------------------------------------------
+Declared in app.yaml:
+    - sql              # SQL warehouse (survey enrichment)
+    - postgres         # Lakebase credential + Postgres connection
+    - genie            # Genie One (onechat) chat
+    - model-serving    # gte-large-en embedding endpoint
+
+Effective scopes on OBO token (from `databricks apps get survey-demo`):
+    - sql
+    - postgres
+    - genie
+    - model-serving
+    - iam.access-control:read   (added by Databricks Apps by default)
+    - iam.current-user:read     (added by Databricks Apps by default)
+
+Auth pattern (backend/auth.py):
+    - Local dev (no X-Forwarded-Access-Token header):
+          WorkspaceClient()  → profile auth from ~/.databrickscfg
+    - Databricks App with OBO:
+          WorkspaceClient(host=..., token=user_token, auth_type="pat")
+      The `auth_type="pat"` kwarg is REQUIRED. Without it the SDK finds
+      both the app's SP OAuth creds (DATABRICKS_CLIENT_ID/SECRET env) and
+      the explicit token param, then refuses with:
+          "validate: more than one authorization method configured:
+           oauth and pat"
+
+Per-surface auth map:
+    | Call                                   | Auth    | Why                              |
+    | -------------------------------------- | ------- | -------------------------------- |
+    | gte-large-en embedding                 | SP (app)| Query vectorization, no user data|
+    | Lakebase credential (generate_db_cred) | OBO     | User identity → Postgres         |
+    | Lakebase Postgres connection           | OBO     | User authenticates as themselves |
+    | SQL warehouse (survey enrichment)      | OBO     | UC row/column grants enforced    |
+    | Genie One (onechat)                    | OBO     | Genie answers with user's grants |
+
+================================================================================
+LIVE TEST #1 — Lakebase hybrid search (/api/search-stream)
+================================================================================
+
+Request
+-------
+GET  https://survey-demo-7474649976481459.aws.databricksapps.com
+     /api/search-stream?q=Aquavit%20Terrace%20was%20broken&limit=3
+Authorization: Bearer <user OAuth token from `databricks auth token`>
+
+Server-Sent Events received (verbatim)
+--------------------------------------
+data: {"step": "embedding", "status": "started",
+       "label": "Embedding query via databricks-gte-large-en"}
+
+data: {"step": "embedding", "status": "done",
+       "duration_ms": 372, "dims": 1024}
+
+data: {"step": "lakebase", "status": "started",
+       "label": "Hybrid search in Lakebase (vector + BM25 → RRF, k=60)"}
+
+data: {"step": "lakebase_cred", "status": "started",
+       "label": "Minting Lakebase OAuth credential"}
+
+data: {"step": "lakebase_cred", "status": "done",
+       "duration_ms": 273}
+
+data: {"step": "lakebase_conn", "status": "started",
+       "label": "Connecting to Postgres
+                 (ep-calm-moon-d8gqqayh.database.us-east-2.cloud.databricks.com)"}
+
+data: {"step": "lakebase_conn", "status": "done",
+       "duration_ms": 220}
+
+data: {"step": "lakebase_query", "status": "started",
+       "label": "Running vector + BM25 query"}
+
+data: {"step": "lakebase_query", "status": "done",
+       "duration_ms": 216, "hits": 3}
+
+data: {"step": "lakebase", "status": "done",
+       "duration_ms": 711, "hits": 3}
+
+data: {"step": "enriching", "status": "started",
+       "label": "Fetching 3 surveys from Unity Catalog"}
+
+data: {"step": "enriching", "status": "done",
+       "duration_ms": 2061, "returned": 3}
+
+data: {"step": "complete", "results": [...]}
+
+Timing summary
+--------------
+    embedding       :   372 ms   (app-auth, gte-large-en, 1024 dims)
+    lakebase_cred   :   273 ms   (OBO — generate_database_credential)
+    lakebase_conn   :   220 ms   (OBO — psycopg2 to Lakebase Postgres)
+    lakebase_query  :   216 ms   (RRF vector + BM25)
+    enriching       : 2,061 ms   (OBO — warehouse join to UC)
+    ------
+    total           : 3,414 ms
+
+Top 3 results (verbatim from the final `complete` event)
+--------------------------------------------------------
+1. survey_id=231665  score=0.0325  sentiment=negative
+   ship=Saigon (Mekong class)   sailing_date=2026-04-23
+   itinerary=Magnificent Mekong
+   amenity_names=[Aquavit Terrace, retractable glass doors]
+   comment=Aquavit Terrace service was poor and the retractable glass doors
+           were broken; could not use the space in bad weather.
+
+2. survey_id=231676  score=0.0325  sentiment=negative
+   ship=Saigon (Mekong class)   sailing_date=2026-04-23
+   itinerary=Magnificent Mekong
+   amenity_names=[retractable glass doors]
+   comment=Aquavit Terrace service was poor and the retractable glass doors
+           were broken; could not use the space in bad weather.
+
+3. survey_id=231652  score=0.0221  sentiment=negative
+   ship=Saigon (Mekong class)   sailing_date=2026-04-23
+   itinerary=Magnificent Mekong
+   amenity_names=[windows, furniture]
+   comment=The Aquavit Terrace had leaking windows and furniture was
+           removed - a mess.
+
+Verdict: PASS
+    - Embedding resolved against gte-large-en.
+    - Lakebase OBO credential minted and consumed by psycopg2.
+    - Hybrid RRF returned 3 relevant Saigon/Mekong matches.
+    - UC enrichment joined to `river_survey_enriched_joined` and returned
+      ship/sailing/satisfaction + comment for each hit.
+
+================================================================================
+LIVE TEST #2 — Genie One chat (/api/genie-one/ask-stream)
+================================================================================
+
+Request
+-------
+POST https://survey-demo-7474649976481459.aws.databricksapps.com
+     /api/genie-one/ask-stream
+Authorization: Bearer <user OAuth token from `databricks auth token`>
+Content-Type: application/json
+
+    { "question": "How many surveys have we received in 2026?" }
+
+Progress events received (in order)
+-----------------------------------
+[1] tool     Running search_assets
+[2] tool     Running search_knowledge_snippets
+[3] thought  "I'll look at the Viking River Cruise Survey Analytics Genie
+              space next."
+[4] inspect  genie.01f1d6f7660a1f65a083b31406069c4b
+             (the survey-demo Genie Agent built in an earlier session)
+[5] inspect  serverless_stable_yrljz5_catalog.survey_demo
+             .river_survey_enriched_mv
+[6] inspect  serverless_stable_yrljz5_catalog.survey_demo.river_survey
+[7] sql      SELECT MEASURE(`Survey Count`) AS `survey_count`,
+                    MIN(`Sailing Date`) AS `first_sailing`,
+                    MAX(`Sailing Date`) AS `last_sailing`
+             FROM river_survey_enriched_mv ...
+[8] sql      SELECT CASE WHEN `Sailing Date` <= DATE'2026-11-06' THEN
+                   'Sailed through Nov 6' ELSE 'Sailing after Nov 6' END
+                   AS `period`,
+                   MEASURE(`Survey Count`) AS `survey_count` ...
+
+Final `complete` event
+----------------------
+status           : completed
+conversation_id  : be0bf2567a934b3c9cb7ae0b7c3368ce
+tool_calls       : 2 × execute_sql_query (SQL shown verbatim above)
+answer (markdown):
+    ## About 237,000 surveys in 2026
+
+    There are **236,982 completed surveys** for 2026 sailings so far.
+    [Query Result](https://fevm-serverless-stable-yrljz5.cloud.databricks.com
+       /one/chat/threads/be0bf2567a934b3c.../?o=7474649976481459#embed-query_a94c6b)
+    [serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_mv]
+       (...)
+    ...
+
+Verdict: PASS
+    - Genie One accepted the OBO token (scope: `genie`).
+    - Routed to the survey-demo Genie Agent space and the two curated
+      metric views (river_survey_enriched_mv + river_survey).
+    - Executed two SQL queries using MEASURE() against the metric view.
+    - Returned a structured markdown answer with clickable workspace
+      links to the query result and the data source.
+    - Progress events (tool / thought / inspect / sql) all streamed to
+      the client — this is what the ChatDrawer renders as the live
+      reasoning timeline.
+
+================================================================================
+Reproduction commands (both tests)
+================================================================================
+
+# 1. Mint an OAuth user token using the CLI (U2M OAuth)
+TOKEN=$(databricks auth token --profile DEFAULT \
+          | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+APP_URL="https://survey-demo-7474649976481459.aws.databricksapps.com"
+
+# 2. Lakebase hybrid search
+curl -sS -N -H "Authorization: Bearer $TOKEN" \
+  "$APP_URL/api/search-stream?q=Aquavit%20Terrace%20was%20broken&limit=3"
+
+# 3. Genie One chat
+curl -sS -N -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"question":"How many surveys have we received in 2026?"}' \
+  "$APP_URL/api/genie-one/ask-stream"
+
+================================================================================
+Summary
+================================================================================
+Both the Explore page (Lakebase hybrid search) and the global chat drawer
+(Genie One) work end-to-end against the live Databricks App deployment at
+https://survey-demo-7474649976481459.aws.databricksapps.com. User identity
+is forwarded via X-Forwarded-Access-Token on every request; Lakebase +
+warehouse + Genie all authenticate as the end user, so UC permissions are
+enforced on the entire read path.
+================================================================================

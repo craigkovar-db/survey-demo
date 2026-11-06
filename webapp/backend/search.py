@@ -14,6 +14,14 @@ Flow for one search request:
                              sailing, satisfaction and the matched comment
                              for each hit survey_id. Returns rows in the
                              rank order from step 2.
+
+Auth modes (both supported, per-request):
+  - OBO (production on Databricks Apps): every surface call — serving
+    endpoint, Lakebase credential minting, Lakebase Postgres connection,
+    SQL warehouse — authenticates as the end user via their forwarded
+    access token, so UC row-level grants are enforced end to end.
+  - App/profile (local dev): user_token=None and each surface falls back to
+    the module-level WorkspaceClient() (profile or SP creds).
 """
 from __future__ import annotations
 
@@ -28,6 +36,8 @@ from typing import Any, Iterator
 import psycopg2
 from databricks import sql as dbsql
 from databricks.sdk import WorkspaceClient
+
+from backend.auth import workspace_for
 
 
 # ---------- Config ----------
@@ -56,10 +66,15 @@ RRF_K = int(os.environ.get("RRF_K", "60"))
 TOP_K_PER_SIDE = int(os.environ.get("TOP_K_PER_SIDE", "100"))
 
 
-# ---------- Lazy singletons ----------
-
-# RLock (not Lock) so nested helpers like `_lakebase_token` →`_workspace()`
-# can re-acquire from the same thread without deadlocking.
+# ---------- Lazy singletons (app-auth only) ----------
+#
+# When OBO is active we DON'T cache — the token belongs to a specific user and
+# sharing it across requests would leak permissions. The caches below are
+# scoped to the app-identity path (local dev or SP fallback on Databricks
+# Apps) where it's safe to reuse.
+#
+# RLock (not Lock) so nested helpers can re-acquire from the same thread
+# without deadlocking.
 _lock = RLock()
 _w: WorkspaceClient | None = None
 _cred_token: str | None = None
@@ -67,7 +82,11 @@ _cred_expires: datetime = datetime.min
 _user_name: str | None = None
 
 
-def _workspace() -> WorkspaceClient:
+def _workspace(user_token: str | None = None) -> WorkspaceClient:
+    """User-scoped client when `user_token` is set (not cached), otherwise the
+    app-auth singleton."""
+    if user_token:
+        return workspace_for(user_token)
     global _w
     with _lock:
         if _w is None:
@@ -75,8 +94,11 @@ def _workspace() -> WorkspaceClient:
         return _w
 
 
-def _lakebase_user() -> str:
+def _lakebase_user(user_token: str | None = None) -> str:
     """Postgres user is the Databricks identity's email / SP app id."""
+    if user_token:
+        # OBO: fetch fresh — this IS the end user's identity.
+        return workspace_for(user_token).current_user.me().user_name
     global _user_name
     with _lock:
         if _user_name is None:
@@ -92,8 +114,19 @@ def _lakebase_endpoint_path() -> str:
     )
 
 
-def _lakebase_token() -> str:
-    """Short-lived OAuth password for Lakebase Autoscaling. Cached 55 minutes."""
+def _lakebase_token(user_token: str | None = None) -> str:
+    """Short-lived OAuth password for Lakebase Autoscaling.
+
+    - OBO: mint fresh per-call (can't cache — different user per request).
+    - App-auth: cache for 55 minutes.
+    """
+    endpoint = _lakebase_endpoint_path()
+    if user_token:
+        cred = workspace_for(user_token).postgres.generate_database_credential(
+            endpoint=endpoint,
+        )
+        return cred.token
+
     global _cred_token, _cred_expires
     now = datetime.utcnow()
     with _lock:
@@ -102,27 +135,38 @@ def _lakebase_token() -> str:
         # ttl expects a protobuf Duration in this SDK — safer to omit it and
         # let the server use its default (1h). Credentials get re-minted every
         # 55 min anyway via `_cred_expires` below.
-        cred = _workspace().postgres.generate_database_credential(
-            endpoint=_lakebase_endpoint_path(),
-        )
+        cred = _workspace().postgres.generate_database_credential(endpoint=endpoint)
         _cred_token = cred.token
         _cred_expires = now + timedelta(minutes=55)
         return _cred_token
 
 
-def _lakebase_connection():
+def _lakebase_connection(user_token: str | None = None):
     return psycopg2.connect(
         host=LAKEBASE_HOST,
         port=5432,
         dbname=LAKEBASE_DB,
-        user=_lakebase_user(),
-        password=_lakebase_token(),
+        user=_lakebase_user(user_token),
+        password=_lakebase_token(user_token),
         sslmode="require",
         connect_timeout=LAKEBASE_CONNECT_TIMEOUT,
     )
 
 
-def _warehouse_connection():
+def _warehouse_connection(user_token: str | None = None):
+    """Warehouse connection. OBO uses the user's token directly; app-auth
+    uses the SDK's credentials provider."""
+    if user_token:
+        host = (
+            (os.environ.get("DATABRICKS_HOST") or "")
+            .replace("https://", "")
+            .rstrip("/")
+        )
+        return dbsql.connect(
+            server_hostname=host,
+            http_path=f"/sql/1.0/warehouses/{WAREHOUSE_ID}",
+            access_token=user_token,
+        )
     cfg = _workspace().config
     host = (cfg.host or "").replace("https://", "").rstrip("/")
     return dbsql.connect(
@@ -134,16 +178,40 @@ def _warehouse_connection():
 
 # ---------- Core pipeline ----------
 
-def embed_query(text: str) -> list[float]:
+def embed_query(text: str, user_token: str | None = None) -> list[float]:
     """Call the gte-large-en serving endpoint via the OpenAI-compatible client
     (returns 1024-dim embedding).
+
+    ALWAYS uses app auth (the app's service principal), not OBO. Reason:
+    model-serving endpoint invocation requires the `model-serving` scope,
+    which is NOT in the documented Databricks Apps user_api_scopes list
+    (only sql / files.files / dashboards.genie / iam.* are requestable).
+    An OBO token therefore gets back
+        403 "Provided OAuth token does not have required scopes:
+             model-serving"
+    even if you try to declare it.
+
+    This is fine for the hybrid-search pipeline: the embedding is just
+    query vectorization — no user data is read here. User-permission
+    enforcement happens on the DOWNSTREAM calls (Lakebase credential +
+    Postgres connection + SQL warehouse), which DO use OBO and respect
+    the end user's UC grants row-by-row.
+
+    `user_token` is kept in the signature for interface symmetry with the
+    rest of the pipeline, but it is intentionally unused here.
     """
+    del user_token  # app-auth only for this call — see docstring
     client = _workspace().serving_endpoints.get_open_ai_client()
     resp = client.embeddings.create(model=EMBED_ENDPOINT, input=[text])
     return list(resp.data[0].embedding)
 
 
-def _hybrid_search_sql(emb: list[float], q: str, limit: int) -> list[dict[str, Any]]:
+def _hybrid_search_sql(
+    emb: list[float],
+    q: str,
+    limit: int,
+    user_token: str | None = None,
+) -> list[dict[str, Any]]:
     """Lakebase hybrid-search half of the pipeline. Takes a pre-computed query
     embedding so the embedding call can be timed/surfaced separately."""
     vec_literal = "[" + ",".join(f"{x:.6f}" for x in emb) + "]"
@@ -178,23 +246,27 @@ def _hybrid_search_sql(emb: list[float], q: str, limit: int) -> list[dict[str, A
               q, q, TOP_K_PER_SIDE,
               limit)
 
-    with _lakebase_connection() as conn:
+    with _lakebase_connection(user_token) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
             rows = cur.fetchall()
     return [{"survey_id": str(r[0]), "score": float(r[1])} for r in rows]
 
 
-def hybrid_search(query: str, limit: int = 20) -> list[dict[str, Any]]:
+def hybrid_search(
+    query: str, limit: int = 20, user_token: str | None = None,
+) -> list[dict[str, Any]]:
     """One-shot embed + Lakebase search. Preserved for the non-streaming endpoint."""
     q = query.strip()
     if not q:
         return []
-    emb = embed_query(q)
-    return _hybrid_search_sql(emb, q, limit)
+    emb = embed_query(q, user_token)
+    return _hybrid_search_sql(emb, q, limit, user_token)
 
 
-def enrich_survey_details(hits: list[dict]) -> list[dict]:
+def enrich_survey_details(
+    hits: list[dict], user_token: str | None = None,
+) -> list[dict]:
     """Join the ranked survey_ids back to UC to get ship, sailing, satisfaction,
     and the matched comment. Preserves hit order."""
     if not hits:
@@ -220,7 +292,7 @@ def enrich_survey_details(hits: list[dict]) -> list[dict]:
     FROM {SURVEY_TABLE}
     WHERE survey_id IN ({placeholders})
     """
-    with _warehouse_connection() as conn:
+    with _warehouse_connection(user_token) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, ids)
             rows = cur.fetchall()
@@ -248,10 +320,12 @@ def enrich_survey_details(hits: list[dict]) -> list[dict]:
     return merged
 
 
-def search(query: str, limit: int = 20) -> list[dict]:
+def search(
+    query: str, limit: int = 20, user_token: str | None = None,
+) -> list[dict]:
     """One-shot API: query → hybrid search → UC enrichment."""
-    hits = hybrid_search(query, limit)
-    return enrich_survey_details(hits)
+    hits = hybrid_search(query, limit, user_token)
+    return enrich_survey_details(hits, user_token)
 
 
 # ---------- Streaming variant (SSE) ----------
@@ -261,7 +335,9 @@ def _sse(data: dict[str, Any]) -> str:
     return f"data: {json.dumps(data)}\n\n"
 
 
-def search_stream(query: str, limit: int = 20) -> Iterator[str]:
+def search_stream(
+    query: str, limit: int = 20, user_token: str | None = None,
+) -> Iterator[str]:
     """Yield SSE events while the pipeline runs so the UI can show per-step
     progress. Events have the shape:
 
@@ -272,6 +348,9 @@ def search_stream(query: str, limit: int = 20) -> Iterator[str]:
 
     On completion, the final event is `{"step": "complete", "results": [...]}`.
     Any raised exception becomes `{"step": "error", "message": "..."}`.
+
+    When `user_token` is provided, every surface (serving endpoint, Lakebase
+    credential + connection, warehouse) authenticates as the end user (OBO).
     """
     q = query.strip()
     if not q:
@@ -285,7 +364,7 @@ def search_stream(query: str, limit: int = 20) -> Iterator[str]:
             "step": "embedding", "status": "started",
             "label": f"Embedding query via {EMBED_ENDPOINT}",
         })
-        emb = embed_query(q)
+        emb = embed_query(q, user_token)
         yield _sse({
             "step": "embedding", "status": "done",
             "duration_ms": int((time.time() - t0) * 1000),
@@ -300,11 +379,11 @@ def search_stream(query: str, limit: int = 20) -> Iterator[str]:
             "label": f"Hybrid search in Lakebase (vector + BM25 → RRF, k={RRF_K})",
         })
 
-        # 2a — mint OAuth credential
+        # 2a — mint OAuth credential (user-scoped when OBO)
         t0 = time.time()
         yield _sse({"step": "lakebase_cred", "status": "started",
                     "label": "Minting Lakebase OAuth credential"})
-        token = _lakebase_token()
+        token = _lakebase_token(user_token)
         yield _sse({"step": "lakebase_cred", "status": "done",
                     "duration_ms": int((time.time() - t0) * 1000)})
 
@@ -316,7 +395,7 @@ def search_stream(query: str, limit: int = 20) -> Iterator[str]:
             host=LAKEBASE_HOST,
             port=5432,
             dbname=LAKEBASE_DB,
-            user=_lakebase_user(),
+            user=_lakebase_user(user_token),
             password=token,
             sslmode="require",
             connect_timeout=LAKEBASE_CONNECT_TIMEOUT,
@@ -379,13 +458,13 @@ def search_stream(query: str, limit: int = 20) -> Iterator[str]:
             "hits": len(hits),
         })
 
-        # Step 3 — enrich from UC via warehouse
+        # Step 3 — enrich from UC via warehouse (OBO when user_token is set)
         t0 = time.time()
         yield _sse({
             "step": "enriching", "status": "started",
             "label": f"Fetching {len(hits)} surveys from Unity Catalog",
         })
-        results = enrich_survey_details(hits)
+        results = enrich_survey_details(hits, user_token)
         yield _sse({
             "step": "enriching", "status": "done",
             "duration_ms": int((time.time() - t0) * 1000),

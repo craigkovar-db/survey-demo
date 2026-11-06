@@ -25,8 +25,12 @@ event, which carries the completed response in `.response.output[]`:
   - items with `type: "message"`, `role: "assistant"`, and
     `metadata.ui_type == "FINAL_RESPONSE"` → the markdown answer
 
-Works identically against local dev (profile auth) and Databricks Apps
-(service-principal / OBO auth) — no CLI subprocess required.
+Auth modes (both supported):
+  - OBO (production on Databricks Apps): pass `user_token` and we send
+    `Authorization: Bearer <user_token>` so Genie answers with the END USER's
+    UC permissions. Only data they can see shows up.
+  - App/profile (local dev): `user_token` is None and we fall back to
+    `WorkspaceClient().config.authenticate()`.
 """
 from __future__ import annotations
 
@@ -44,10 +48,27 @@ _w: WorkspaceClient | None = None
 
 
 def _workspace() -> WorkspaceClient:
+    """Default (app-auth) WorkspaceClient. Only used when no OBO token is
+    passed — a user-scoped client is built per-request in `_auth`."""
     global _w
     if _w is None:
         _w = WorkspaceClient()
     return _w
+
+
+def _auth(user_token: str | None) -> tuple[dict[str, str], str]:
+    """Return (headers, host) for the onechat REST call.
+
+    OBO when `user_token` is set — the single Authorization header is enough
+    and we take the host from env (`DATABRICKS_HOST` is always set on
+    Databricks Apps). Otherwise fall back to the SDK's `config.authenticate()`
+    which honors profile/SP credentials.
+    """
+    if user_token:
+        host = (os.environ.get("DATABRICKS_HOST") or "").rstrip("/")
+        return ({"Authorization": f"Bearer {user_token}"}, host)
+    cfg = _workspace().config
+    return (cfg.authenticate(), (cfg.host or "").rstrip("/"))
 
 
 def _parse_events(sse_body: str) -> list[dict[str, Any]]:
@@ -126,8 +147,16 @@ def _synthesize(events: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def ask(question: str, conversation_id: str | None = None) -> dict[str, Any]:
-    """Ask Genie One. Pass `conversation_id` from a prior answer to continue."""
+def ask(
+    question: str,
+    conversation_id: str | None = None,
+    user_token: str | None = None,
+) -> dict[str, Any]:
+    """Ask Genie One. Pass `conversation_id` from a prior answer to continue.
+
+    When `user_token` is provided (OBO), the call is authorized as the end
+    user, so Genie's data access respects their UC permissions.
+    """
     q = (question or "").strip()
     if not q:
         return {
@@ -137,9 +166,9 @@ def ask(question: str, conversation_id: str | None = None) -> dict[str, Any]:
             "tool_calls": [],
         }
 
-    w = _workspace()
-    cfg = w.config
-    host = (cfg.host or "").rstrip("/")
+    headers, host = _auth(user_token)
+    headers["Content-Type"] = "application/json"
+    headers["Accept"] = "text/event-stream"
 
     body: dict[str, Any] = {
         "enable_viz": False,
@@ -154,10 +183,6 @@ def ask(question: str, conversation_id: str | None = None) -> dict[str, Any]:
     }
     if conversation_id:
         body["conversationId"] = conversation_id
-
-    headers = cfg.authenticate()
-    headers["Content-Type"] = "application/json"
-    headers["Accept"] = "text/event-stream"
 
     resp = requests.post(
         host + GENIE_ONE_PATH,
@@ -253,21 +278,25 @@ def _progress_from_event(ev: dict[str, Any]) -> dict[str, Any] | None:
 def ask_stream(
     question: str,
     conversation_id: str | None = None,
+    user_token: str | None = None,
 ) -> Iterator[str]:
     """Streaming version of `ask`. Yields SSE events the frontend consumes:
 
       {"type": "progress", "kind": "thought"|"sql"|"inspect"|"tool", ...}
       {"type": "complete", "answer": {status, conversation_id, text, tool_calls}}
       {"type": "error",    "message": "..."}
+
+    Same OBO behavior as `ask`: with `user_token`, the call is authorized as
+    the end user.
     """
     q = (question or "").strip()
     if not q:
         yield _sse({"type": "error", "message": "Empty question."})
         return
 
-    w = _workspace()
-    cfg = w.config
-    host = (cfg.host or "").rstrip("/")
+    headers, host = _auth(user_token)
+    headers["Content-Type"] = "application/json"
+    headers["Accept"] = "text/event-stream"
 
     body: dict[str, Any] = {
         "enable_viz": False,
@@ -282,10 +311,6 @@ def ask_stream(
     }
     if conversation_id:
         body["conversationId"] = conversation_id
-
-    headers = cfg.authenticate()
-    headers["Content-Type"] = "application/json"
-    headers["Accept"] = "text/event-stream"
 
     try:
         resp = requests.post(

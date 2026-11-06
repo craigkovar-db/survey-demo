@@ -1,5 +1,26 @@
 command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
+# ---- On-behalf-of-user (OBO) authorization ----
+# When users hit the app, Databricks Apps mints a short-lived user access
+# token with these scopes and forwards it as X-Forwarded-Access-Token. The
+# backend reads that header and uses the token for Genie One, Lakebase
+# credential minting, the Lakebase Postgres connection, and the SQL
+# warehouse — so each user sees only what their UC grants allow.
+#
+# The effective token also carries `iam.current-user:read` and
+# `iam.access-control:read` by default (added by Databricks Apps), so
+# `current_user.me()` works without an explicit entry here.
+#
+# model-serving: included so the embedding call can optionally run under
+# OBO. The current backend keeps that call on app-auth (see
+# backend/search.py :: embed_query) for consistency, but the scope is
+# here if that policy ever changes.
+user_api_scopes:
+  - sql              # SQL warehouse (survey enrichment)
+  - postgres         # Lakebase credential minting + Postgres connection
+  - genie            # Genie One (onechat) workspace chat
+  - model-serving    # gte-large-en embedding endpoint (currently app-auth)
+
 env:
   - name: APP_NAME
     value: "DataCruises Customer Insight"

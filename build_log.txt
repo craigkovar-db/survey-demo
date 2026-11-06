@@ -122,3 +122,150 @@ Note:             Build a REACT + FastAPI Databricks app that can also be
                   run locally for development and testing
 
 ================================================================================
+
+Session ID:       f99ed4df-b571-4cfc-80c7-77a9a501d434
+Session start:    2026-11-03T01:00:00Z  (2026-11-02 19:00:00 CST)
+Current time:     2026-11-04T14:10:00Z  (2026-11-04 08:10:00 CST)
+
+Note:             Added a Genie One chat drawer to the webapp (both pages)
+                  with live reasoning timeline and markdown-rendered answers
+
+Implementation:
+
+    [Backend]
+    - backend/genie_one.py — in-process client for Genie One's workspace-wide
+      data chat. Posts to POST /api/2.0/data-rooms/tools/onechat/responses
+      (the same `onechat` service that backs `databricks genie ask` and the
+      Genie One MCP). Request body uses the structured content shape
+      [{"type":"input_text","text":"..."}] — a bare string is rejected with
+      "Can not deserialize instance of scala.collection.Seq".
+    - Auth is handled by WorkspaceClient().config.authenticate() which
+      RETURNS the headers dict (does not mutate one). Same code path works
+      locally (profile auth) and on Databricks Apps (service-principal /
+      OBO auth) — no CLI subprocess needed.
+    - Two entrypoints: ask() (blocking) and ask_stream() (SSE generator).
+      The streaming version parses response.output_item.added events as
+      they arrive and emits friendly progress hints (thought, inspect, sql,
+      tool) to the frontend; final answer is synthesized from the terminal
+      response.done event (output[] items with ui_type == FINAL_RESPONSE).
+    - backend/main.py — exposed /api/genie-one/ask (JSON) and
+      /api/genie-one/ask-stream (text/event-stream) with X-Accel-Buffering:
+      no so events arrive incrementally.
+
+    [Frontend]
+    - frontend/src/components/ChatDrawer.tsx — global slide-out drawer
+      mounted in App.tsx so both pages share one chat surface. Floating red
+      FAB opens the drawer; conversationId is kept in component state so
+      follow-ups continue the same Genie One conversation.
+    - Streams SSE via fetch + ReadableStream (async generator parses the
+      "data: {...}" lines). Progress events render as a pill-tagged
+      timeline (thought / inspect / sql / tool) with a pulsing "Composing
+      answer..." indicator; final answer replaces the thinking card.
+    - Final answers go through react-markdown + remark-gfm so Genie's
+      markdown (headings, lists, tables, links) renders properly. Executed
+      SQL is shown in a collapsible <details> under the answer.
+    - theme.css — chat drawer styles, markdown bubble styles, progress
+      pills with color-coded kinds, dc-md-table-wrap scroll container so
+      wide tables scroll horizontally INSIDE the pane instead of pushing
+      the bubble off-screen. First column gets min-width 120px / max-width
+      220px with a nowrap header so column titles like "Sailing Date"
+      stay on one line.
+
+Prompts:
+
+    [Initial]
+    For the webapp, add a pop out pane to the right side of both pages
+    that is a chat bot that talks with the Genie One MCP tool
+
+    [Progress visibility]
+    When the genie one panel is thinking, show the reasoning/task (not
+    just thinking....). Also format the output to look nicer versus just
+    raw text
+
+    [Table overflow]
+    The embedded results went past the pop out pane. Can the embedded
+    table scroll itself but fit into the pop out pane?
+
+    [First-column width]
+    The table scrolls correctly now, but the first column of sailing date
+    is too narrow and hard to read. Can you make that column wider to
+    match the title of the column while keeping the scrolling?
+
+================================================================================
+
+Session ID:       f99ed4df-b571-4cfc-80c7-77a9a501d434
+Session resumed:  2026-11-05T19:00:00Z  (2026-11-05 13:00:00 CST)
+Current time:     2026-11-06T01:17:00Z  (2026-11-05 19:17:00 CST)
+
+Note:             Switched the webapp to on-behalf-of-user (OBO) auth for
+                  Genie One and Lakebase, built the production frontend
+                  bundle, and pushed the built dist/ to the workspace
+
+Implementation:
+
+    [New: backend/auth.py]
+    - user_token_from(request) — reads X-Forwarded-Access-Token (Databricks
+      Apps forwards the end user's access token in this header when user
+      authorization is enabled).
+    - workspace_for(user_token) — returns a user-scoped WorkspaceClient
+      when a token is present, otherwise falls back to the default
+      WorkspaceClient() (profile locally, SP on Apps). User-scoped clients
+      are NOT cached — each request belongs to a different user.
+
+    [backend/genie_one.py]
+    - Added _auth(user_token) → (headers, host). OBO path builds
+      Authorization: Bearer <user_token> directly; app-auth path uses
+      cfg.authenticate(). Host comes from DATABRICKS_HOST env var under
+      OBO.
+    - ask() and ask_stream() both accept user_token. Genie One answers
+      honor the END user's UC permissions when OBO is active.
+
+    [backend/search.py — every surface threaded with user_token]
+    - _lakebase_token(user_token) — OBO path mints a fresh Postgres OAuth
+      credential per request via the user-scoped client (no caching —
+      per-user token makes module cache unsafe). App-auth path keeps the
+      55-min cache.
+    - _lakebase_user(user_token) — OBO returns the END user's email / SP
+      id, which Postgres authenticates as.
+    - _lakebase_connection(user_token) — threads token into psycopg2.
+    - _warehouse_connection(user_token) — under OBO, passes
+      access_token=user_token directly to databricks-sql-connector; under
+      app auth, uses the SDK's credentials provider.
+    - embed_query, hybrid_search, enrich_survey_details, search,
+      search_stream — all accept user_token and forward it so the serving
+      endpoint, Lakebase, and warehouse all authenticate as the end user.
+
+    [backend/main.py]
+    - Each route now takes request: Request. For non-streaming routes we
+      extract the OBO token inline; for SSE routes we extract it BEFORE
+      building the generator (the Request object is only valid inside the
+      route function, not inside the async generator body).
+    - Local dev still works unchanged — no X-Forwarded-Access-Token header
+      → user_token=None everywhere → falls back to profile auth.
+
+    [app.yaml]
+    - Declared user_api_scopes so Databricks Apps mints a user token with
+      the right scopes:
+        sql                        → SQL warehouse + Lakebase credential
+        serving.serving-endpoints  → gte-large-en embedding endpoint
+        dashboards.genie           → Genie One (onechat) chat
+        iam.current-user:read      → current_user.me() for Postgres user
+
+    [Frontend build + push]
+    - npm run build → frontend/dist (index.html 0.81kB, logo.svg 1.41kB,
+      assets/index-*.css 13.99kB, assets/index-*.js 343.52kB gzip 107.96kB)
+    - .gitignore excludes frontend/dist/ and databricks sync respects
+      .gitignore by default, so used --include 'frontend/dist/**' to force
+      the built bundle into the workspace folder.
+
+Prompts:
+
+    [OBO permissioning]
+    Update the permissioning in the app so that the genie chat and the
+    lakebase use OBO permissions
+
+    [Frontend build + push]
+    build the front end of the webapp and then push the built frontend to
+    the workspace git folder
+
+================================================================================
