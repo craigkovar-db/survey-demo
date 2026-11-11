@@ -1,0 +1,26 @@
+{
+  "name": "survey_demo_enrich_pipeline_sdp",
+  "edition": "ADVANCED",
+  "serverless": true,
+  "photon": true,
+  "channel": "CURRENT",
+  "development": false,
+  "continuous": false,
+  "catalog": "serverless_stable_yrljz5_catalog",
+  "schema": "survey_demo",
+  "libraries": [
+    {
+      "file": {
+        "path": "/Workspace/Users/craig.kovar@databricks.com/survey-demo/resources/enrich_pipeline.sql"
+      }
+    }
+  ],
+  "configuration": {
+    "pipelines.enableTrackHistory": "true"
+  },
+  "tags": {
+    "project": "survey-demo",
+    "layer": "enrichment",
+    "built_by": "lakeflow-sdp"
+  }
+}

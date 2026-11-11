@@ -1,0 +1,155 @@
+================================================================================
+LAKEFLOW_SDP.TXT — Spark Declarative Pipeline for survey enrichment
+================================================================================
+Timestamp (UTC):     2026-11-11T19:25:00Z
+Timestamp (local):   2026-11-11 13:25:00 CST
+Workspace:           fevm-serverless-stable-yrljz5
+Workspace ID:        7474649976481459
+CLI profile:         DEFAULT
+
+Converted the previous `enrich_survey_incremental` notebook/Lakeflow Job
+to a serverless Spark Declarative Pipeline (SDP). The pipeline exists,
+has been triggered, and ran end-to-end against 236,982 real survey rows.
+
+--------------------------------------------------------------------------------
+BUILD CONSTRUCTS IN THE REPO (git folder)
+--------------------------------------------------------------------------------
+Two artifacts, both checked into
+/Workspace/Users/craig.kovar@databricks.com/survey-demo/resources/:
+
+  enrich_pipeline.sql   ← the pipeline source (SDP SQL). Declares one
+                          Streaming Table that reads STREAM(river_survey)
+                          and applies ai_classify + ai_extract + ai_query
+                          in the SELECT.
+  enrich_pipeline.json  ← the pipeline configuration (deploy spec):
+                          serverless + Photon + ADVANCED edition,
+                          catalog=serverless_stable_yrljz5_catalog,
+                          schema=survey_demo, continuous=false,
+                          libraries → the SQL file above.
+
+Why these are better build constructs than the old notebook Job:
+  - No manual anti-join; Delta's change feed drives incremental processing.
+  - Declarative — the engine owns bookkeeping, retries, and checkpointing.
+  - Single-file transform; one data-quality constraint attached inline
+    (`valid_survey_id EXPECT survey_id IS NOT NULL ON VIOLATION DROP ROW`).
+  - Serverless compute; no cluster / environment to maintain.
+  - Pipeline + Streaming Table are both first-class UC objects, so SDP
+    layer coverage shows up as deployed infrastructure, not just source.
+
+================================================================================
+PIPELINE DEPLOYED IN THE WORKSPACE
+================================================================================
+name:         survey_demo_enrich_pipeline_sdp
+pipeline_id:  3fc54964-fc5f-4080-9b40-682f2d1806c0
+state:        IDLE  (after a successful first update)
+creator:      craig.kovar@databricks.com
+edition:      ADVANCED
+compute:      serverless (Photon enabled)
+channel:      CURRENT
+continuous:   false  (triggered)
+catalog:      serverless_stable_yrljz5_catalog
+schema:       survey_demo
+libraries:    /Workspace/.../survey-demo/resources/enrich_pipeline.sql
+tags:         project=survey-demo · layer=enrichment · built_by=lakeflow-sdp
+
+================================================================================
+UPDATE #1 — FIRST END-TO-END RUN
+================================================================================
+update_id:    b31bacfd-81dd-49b6-8270-b6495848abe5
+cause:        API_CALL
+state:        COMPLETED
+started:      2026-11-11T18:49:55Z
+completed:    2026-11-11T19:19:28Z
+duration:     ~29 min 33s
+
+Event timeline (verbatim from `databricks pipelines list-pipeline-events`)
+--------------------------------------------------------------------------
+  18:49:44  user_action      User craig.kovar@databricks.com created pipeline
+  18:49:55  user_action      Principal craig.kovar@databricks.com started an update
+  18:49:55  create_update    Update b31bac started by API_CALL
+  18:49:56  update_progress  Update b31bac is WAITING_FOR_RESOURCES
+  18:50:05  update_progress  Update b31bac is INITIALIZING
+  18:50:10  update_progress  Update b31bac is SETTING_UP_TABLES
+  18:50:14  graph_created    Dataflow graph successfully loaded
+  18:50:14  update_progress  Update b31bac is RUNNING
+  18:50:14  flow_progress    Flow river_survey_enriched_sdp is QUEUED
+  18:50:14  flow_progress    Flow river_survey_enriched_sdp is STARTING
+  18:50:18  flow_progress    Flow river_survey_enriched_sdp is RUNNING
+  19:19:28  flow_progress    Completed a streaming update of river_survey_enriched_sdp
+  19:19:28  flow_progress    Flow river_survey_enriched_sdp has COMPLETED
+  19:19:28  update_progress  Update b31bac is COMPLETED
+
+Target table: serverless_stable_yrljz5_catalog.survey_demo.river_survey_enriched_sdp
+----------------------------------------------------------------
+  enriched_rows             : 236,982   (every row from the source table)
+  with_stateroom_sentiment  :  35,547   (rows that had a stateroom comment)
+  with_amenity_sentiment    :  82,662   (rows that had an amenity comment)
+  with_embedding            :  82,662   (1024-dim ARRAY<FLOAT> per row)
+
+Spot-check — three enriched rows (actual output from the SDP target)
+--------------------------------------------------------------------
+  survey_id = 2
+    comment  : "Lounge spaces were beautiful and comfortable."
+    sentiment: positive
+    emb_dims : 1024
+
+  survey_id = 8
+    comment  : "Lots to do and great variety for all ages."
+    sentiment: positive
+    emb_dims : 1024
+
+  survey_id = 26
+    comment  : "Fitness center was well-equipped and never too crowded."
+    sentiment: positive
+    amenity  : ["Fitness center"]
+    emb_dims : 1024
+
+Verdict: PASS — the SDP flow ran end-to-end on serverless, applied all
+three AI functions to every applicable row, wrote 236,982 enriched rows
+to the UC-governed target, and left the pipeline in IDLE state ready
+for the next trigger.
+
+================================================================================
+Reproduction commands
+================================================================================
+# Inspect the pipeline
+databricks pipelines get 3fc54964-fc5f-4080-9b40-682f2d1806c0 --profile DEFAULT
+
+# Inspect this update
+databricks pipelines get-update \
+  3fc54964-fc5f-4080-9b40-682f2d1806c0 \
+  b31bacfd-81dd-49b6-8270-b6495848abe5 \
+  --profile DEFAULT
+
+# Event timeline
+databricks pipelines list-pipeline-events \
+  3fc54964-fc5f-4080-9b40-682f2d1806c0 \
+  --max-results 60 --profile DEFAULT
+
+# Trigger another update
+databricks pipelines start-update \
+  3fc54964-fc5f-4080-9b40-682f2d1806c0 \
+  --profile DEFAULT
+
+# Confirm row count
+DATABRICKS_WAREHOUSE_ID=5f583e258cc6613a \
+  databricks experimental aitools tools query --profile DEFAULT \
+  "SELECT COUNT(*) FROM serverless_stable_yrljz5_catalog.survey_demo
+   .river_survey_enriched_sdp"
+
+================================================================================
+Summary
+================================================================================
+Build constructs in repo:    2  (enrich_pipeline.sql + enrich_pipeline.json)
+Pipelines deployed:          1  (3fc54964-fc5f-4080-9b40-682f2d1806c0)
+Updates with SUCCESS result: 1  (b31bacfd-81dd-49b6-8270-b6495848abe5)
+Rows enriched by the SDP:    236,982
+Compute:                     serverless (Photon ON)
+AI Functions executed:       ai_classify (×2 columns), ai_extract, ai_query
+
+The Lakeflow Spark Declarative Pipeline layer of the DataCruises project is
+BOTH authored (SDP SQL + JSON config in /resources) AND operated (deployed
+in the workspace, run end-to-end on serverless, with a timestamped
+SUCCESS update record and a UC-governed Streaming Table containing the
+enriched output).
+================================================================================
