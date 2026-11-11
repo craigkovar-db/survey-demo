@@ -14,7 +14,13 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install -q psycopg2-binary
+# MAGIC %pip install -q psycopg2-binary "databricks-sdk>=0.96,<1.0"
+# MAGIC
+# MAGIC # ^ pin databricks-sdk explicitly. The serverless runtime's pre-installed
+# MAGIC #   SDK is older and does NOT have `WorkspaceClient.postgres` (the attribute
+# MAGIC #   for Lakebase Autoscaling projects/branches/endpoints). Without this pin
+# MAGIC #   the next cell fails with:
+# MAGIC #     AttributeError: 'WorkspaceClient' object has no attribute 'postgres'
 
 # COMMAND ----------
 
@@ -45,11 +51,16 @@ print(f"endpoint = {endpoint_path}")
 
 w = WorkspaceClient()
 
-ep = w.postgres.get_endpoint(endpoint_path)
-host = ep.status.hosts.host
+# Hard-coded Lakebase host for this project (matches the webapp's env config).
+# `w.postgres.get_endpoint(endpoint_path)` returns the same value, but keeping
+# it static here means the notebook does not need a second SDK call to run.
+host = "ep-calm-moon-d8gqqayh.database.us-east-2.cloud.databricks.com"
 print(f"host = {host}")
 
-cred = w.postgres.generate_database_credential(endpoint_path)
+# IMPORTANT: `endpoint` must be passed as a KEYWORD argument. The SDK method
+# signature is `generate_database_credential(*, endpoint, ...)` — a positional
+# string is rejected with a TypeError on current SDK versions.
+cred = w.postgres.generate_database_credential(endpoint=endpoint_path)
 token = cred.token
 
 # generate_database_credential may or may not return a username; fall back to
