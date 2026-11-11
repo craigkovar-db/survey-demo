@@ -269,3 +269,23 @@ Prompts:
     the workspace git folder
 
 ================================================================================
+
+Session ID:       f99ed4df-b571-4cfc-80c7-77a9a501d434
+Session resumed:  2026-11-11T14:30:00Z  (2026-11-11 08:30:00 CST)
+Current time:     2026-11-11T15:08:00Z  (2026-11-11 09:08:00 CST)
+
+Note:             Updated the top-level README.md with an overview of the
+                  project (goal, pipeline, architecture) and a detailed
+                  folder/file layout section covering resources, dashboards,
+                  genie, proof, and the webapp.
+
+Prompt:
+    Read the git folder survey_demo and update the README.md at the top
+    level with the following information. An overview of the project
+    describing the goal to get insight from unstructured data in surveys,
+    how we process it using Lakeflow Jobs and AI Functions, expose it to
+    hybrid search (ANN + BM25), and allow conversational analytics
+    through Genie. Then create a second section that details the folders,
+    the files contained, etc...
+
+================================================================================
